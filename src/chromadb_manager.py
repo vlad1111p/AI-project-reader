@@ -25,13 +25,13 @@ class ChromaDBManager:
             self.collection = self.client.create_collection("documents")
             logging.info("Collection 'documents' created.")
 
-    def add_files_from_project_to_db(self, project_folder):
-        reader = FileReader(project_folder)
+    def add_files_from_project_to_db(self, project_path):
+        reader = FileReader(project_path)
         files_contents = reader.read_all_files()
         for file_path, content in files_contents.items():
-            self.add_file_to_db(file_path, content)
+            self.add_file_to_db(project_path, file_path, content)
 
-    def add_file_to_db(self, file_path, file_content):
+    def add_file_to_db(self, project_path, file_path, file_content):
         embedding_id = file_path
 
         existing_docs = self.collection.get(ids=[embedding_id])
@@ -45,17 +45,20 @@ class ChromaDBManager:
                     documents=[file_content],
                     ids=[embedding_id],
                     embeddings=[to_embedding],
+                    metadatas=[{"project_path": project_path}],
                 )
                 logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
             else:
                 logging.warning(f"Embedding for '{file_path}' is empty.")
 
-    def query_db(self, query_text: str):
+    def query_db_by_project(self, query_text: str, project_path: str):
         """Query the ChromaDB with text and retrieve similar documents"""
-        query_embedding = self.embed_text(query_text)  # Generate query embedding
+        query_embedding = self.embed_text(query_text)
         if query_embedding:
             results = self.collection.query(
-                query_embeddings=[query_embedding], n_results=4
+                query_embeddings=[query_embedding],
+                n_results=4,
+                where={"project_path": project_path},
             )
             return results["documents"] if results else None
         else:

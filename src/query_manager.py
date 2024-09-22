@@ -9,13 +9,13 @@ class QueryManager:
         self.db_manager = ChromaDBManager()
         self.ollama_ai = OllamaAI()
 
-    def ingest_relevant_files_from_project(self, project_folder):
-        self.db_manager.add_files_from_project_to_db(project_folder)
+    def ingest_relevant_files_from_project(self, project_path):
+        self.db_manager.add_files_from_project_to_db(project_path)
 
-    def process_query(self, query):
+    def process_query(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
 
-        query_result = self.db_manager.query_db(query)
+        query_result = self.db_manager.query_db_by_project(query, project_path)
 
         if query_result:
             logging.info("Processing query results with OllamaAI...")
