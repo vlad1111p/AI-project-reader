@@ -1,5 +1,14 @@
+import logging
+
 import chromadb
-from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+from chromadb.errors import InvalidCollectionException
+from chromadb.utils.embedding_functions.ollama_embedding_function import (
+    OllamaEmbeddingFunction,
+)
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 class ChromaDBManager:
@@ -8,14 +17,15 @@ class ChromaDBManager:
         self.client = chromadb.PersistentClient(path="ollama")
 
         self.embedding_function = OllamaEmbeddingFunction(
-            model_name="nomic-embed-text",
+            model_name="mxbai-embed-large",
             url="http://localhost:11434/api/embeddings",
         )
-
         try:
             self.collection = self.client.get_collection("documents")
-        except chromadb.api.errors.CollectionNotFoundError:
+            logging.info("Collection 'documents' retrieved.")
+        except InvalidCollectionException:
             self.collection = self.client.create_collection("documents")
+            logging.info("Collection 'documents' created.")
 
     def embed_text(self, text: str):
         """Generate embeddings for the given text using Ollama's embedding model"""
@@ -25,16 +35,24 @@ class ChromaDBManager:
         except Exception as e:
             raise ValueError(f"Failed to generate embeddings: {e}")
 
-    def add_file_to_db(self, file_name: str, file_content: str):
-        """Add a file to the ChromaDB collection using Ollama embeddings"""
-        to_embedding = self.embed_text(file_content)  # Generate embeddings
-        if to_embedding:
-            self.collection.add(
-                documents=[file_content], ids=[file_name], embeddings=[to_embedding]
-            )
-            print(f"File '{file_name}' added to ChromaDB with embedding.")
+    def add_file_to_db(self, file_path, file_content):
+        embedding_id = file_path
+
+        existing_docs = self.collection.get(ids=[embedding_id])
+
+        if existing_docs["documents"]:
+            logging.warning(f"Embedding ID '{embedding_id}' already exists.")
         else:
-            print(f"Embedding for file '{file_name}' is empty, skipping.")
+            to_embedding = self.embed_text(file_content)
+            if to_embedding:
+                self.collection.add(
+                    documents=[file_content],
+                    ids=[embedding_id],
+                    embeddings=[to_embedding],
+                )
+                logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
+            else:
+                logging.warning(f"Embedding for '{file_path}' is empty.")
 
     def query_db(self, query_text: str):
         """Query the ChromaDB with text and retrieve similar documents"""
@@ -45,7 +63,9 @@ class ChromaDBManager:
             )
             return results["documents"] if results else None
         else:
-            print(f"Embedding for query '{query_text}' is empty, skipping query.")
+            logging.info(
+                f"Embedding for query '{query_text}' is empty, skipping query."
+            )
             return None
 
 
@@ -53,4 +73,4 @@ if __name__ == "__main__":
     db_manager = ChromaDBManager()
     test_text = "Here is an article about llamas..."
     embedding = db_manager.embed_text(test_text)
-    print(f"Embedding for test text: {embedding}")
+    logging.info(f"Embedding for test text: {embedding}")
