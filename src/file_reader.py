@@ -20,6 +20,10 @@ class FileReader:
             "pom.xml",
         ]
 
+    def read_all_files(self):
+        files = self.get_files()
+        return {file: read_file(file) for file in files}
+
     def get_files(self):
         """Get all relevant files in the project directory based on file extensions."""
         files = []
@@ -31,10 +35,6 @@ class FileReader:
                 )
             )
         return files
-
-    def read_all_files(self):
-        files = self.get_files()
-        return {file: read_file(file) for file in files}
 
 
 if __name__ == "__main__":
