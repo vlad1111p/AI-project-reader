@@ -6,6 +6,8 @@ from chromadb.utils.embedding_functions.ollama_embedding_function import (
     OllamaEmbeddingFunction,
 )
 
+from src.file_reader import FileReader
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -27,13 +29,11 @@ class ChromaDBManager:
             self.collection = self.client.create_collection("documents")
             logging.info("Collection 'documents' created.")
 
-    def embed_text(self, text: str):
-        """Generate embeddings for the given text using Ollama's embedding model"""
-        try:
-            to_embedding = self.embedding_function([text])
-            return to_embedding[0] if to_embedding else None
-        except Exception as e:
-            raise ValueError(f"Failed to generate embeddings: {e}")
+    def add_files_from_project(self, project_folder):
+        reader = FileReader(project_folder)
+        files_contents = reader.read_all_files()
+        for file_path, content in files_contents.items():
+            self.add_file_to_db(file_path, content)
 
     def add_file_to_db(self, file_path, file_content):
         embedding_id = file_path
@@ -67,6 +67,14 @@ class ChromaDBManager:
                 f"Embedding for query '{query_text}' is empty, skipping query."
             )
             return None
+
+    def embed_text(self, text: str):
+        """Generate embeddings for the given text using Ollama's embedding model"""
+        try:
+            to_embedding = self.embedding_function([text])
+            return to_embedding[0] if to_embedding else None
+        except Exception as e:
+            raise ValueError(f"Failed to generate embeddings: {e}")
 
 
 if __name__ == "__main__":
