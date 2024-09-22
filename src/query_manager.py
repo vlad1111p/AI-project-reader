@@ -1,6 +1,7 @@
 import logging
 
 from src.chromadb_manager import ChromaDBManager
+from src.database.database import DatabaseManager
 from src.llama_ai import OllamaAI
 
 
@@ -8,6 +9,7 @@ class QueryManager:
     def __init__(self, language: str):
         self.db_manager = ChromaDBManager()
         self.ollama_ai = OllamaAI()
+        self.sql_db_manager = DatabaseManager()
         self.language = language
 
     def ingest_relevant_files_from_project(self, project_path):
@@ -16,7 +18,9 @@ class QueryManager:
     def process_query(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
 
-        query_result = self.db_manager.query_db(query, project_path, self.language)
+        query_result = self.db_manager.query_db_by_project_path_and_language(
+            query, project_path, self.language
+        )
 
         if query_result:
             logging.info("Processing query results with OllamaAI...")
@@ -32,5 +36,8 @@ class QueryManager:
 
                 response = self.ollama_ai.query_ollama(prompt)
                 print(f"Response for Document {i + 1}: {response}")
+                self.sql_db_manager.connect_and_execute_query(query, response)
+                print(f"SQLDatabase content {self.sql_db_manager.get_queries()}")
+
         else:
             logging.info("No relevant files found for the query.")

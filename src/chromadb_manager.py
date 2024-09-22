@@ -53,7 +53,9 @@ class ChromaDBManager:
             else:
                 logging.warning(f"Embedding for '{file_path}' is empty.")
 
-    def query_db(self, query_text: str, project_path: str, language: str):
+    def query_db_by_project_path_and_language(
+            self, query_text: str, project_path: str, language: str
+    ):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
         query_embedding = self.embed_text(query_text)
         if query_embedding:
@@ -89,7 +91,7 @@ if __name__ == "__main__":
     db_manager = ChromaDBManager()
     test_text = "py file."
     db_manager.add_files_from_project_to_db(python_project_path, "python")
-
-    response = db_manager.query_db(test_text, python_project_path, "python")
-
+    response = db_manager.query_db_by_project_path_and_language(
+        test_text, python_project_path, "python"
+    )
     logging.info(f"Embedding for test text: {response}")
