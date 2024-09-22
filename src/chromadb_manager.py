@@ -8,10 +8,6 @@ from chromadb.utils.embedding_functions.ollama_embedding_function import (
 
 from src.file_reader import FileReader
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
 
 class ChromaDBManager:
     def __init__(self):
@@ -29,7 +25,7 @@ class ChromaDBManager:
             self.collection = self.client.create_collection("documents")
             logging.info("Collection 'documents' created.")
 
-    def add_files_from_project(self, project_folder):
+    def add_files_from_project_to_db(self, project_folder):
         reader = FileReader(project_folder)
         files_contents = reader.read_all_files()
         for file_path, content in files_contents.items():
