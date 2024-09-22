@@ -25,17 +25,19 @@ class ChromaDBManager:
             self.collection = self.client.create_collection("documents")
             logging.info("Collection 'documents' created.")
 
-    def add_files_from_project_to_db(self, project_path):
-        reader = FileReader(project_path)
+    def add_files_from_project_to_db(self, project_path, language):
+        """Add all files from the project path to the database."""
+        reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
-        for file_path, content in files_contents.items():
-            self.add_file_to_db(project_path, file_path, content)
 
-    def add_file_to_db(self, project_path, file_path, file_content):
+        for file_path, content in files_contents.items():
+            self.add_file_to_db(project_path, file_path, content, language)
+
+    def add_file_to_db(self, project_path, file_path, file_content, language):
+        """Add a single file to the ChromaDB along with its metadata."""
         embedding_id = file_path
 
         existing_docs = self.collection.get(ids=[embedding_id])
-
         if existing_docs["documents"]:
             logging.warning(f"Embedding ID '{embedding_id}' already exists.")
         else:
@@ -45,20 +47,25 @@ class ChromaDBManager:
                     documents=[file_content],
                     ids=[embedding_id],
                     embeddings=[to_embedding],
-                    metadatas=[{"project_path": project_path}],
+                    metadatas=[{"project_path": project_path, "language": language}],
                 )
                 logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
             else:
                 logging.warning(f"Embedding for '{file_path}' is empty.")
 
-    def query_db_by_project(self, query_text: str, project_path: str):
-        """Query the ChromaDB with text and retrieve similar documents"""
+    def query_db(self, query_text: str, project_path: str, language: str):
+        """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
         query_embedding = self.embed_text(query_text)
         if query_embedding:
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=4,
-                where={"project_path": project_path},
+                where={
+                    "$and": [
+                        {"project_path": {"$eq": project_path}},
+                        {"language": {"$eq": language}},
+                    ]
+                },
             )
             return results["documents"] if results else None
         else:
@@ -68,8 +75,9 @@ class ChromaDBManager:
             return None
 
     def embed_text(self, text: str):
-        """Generate embeddings for the given text using Ollama's embedding model"""
+        """Generate embeddings for the given text using Ollama's embedding model."""
         try:
+            logging.info(f"Embedding for test text: {str}")
             to_embedding = self.embedding_function([text])
             return to_embedding[0] if to_embedding else None
         except Exception as e:
@@ -77,7 +85,11 @@ class ChromaDBManager:
 
 
 if __name__ == "__main__":
+    python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     db_manager = ChromaDBManager()
-    test_text = "Here is an article about llamas..."
-    embedding = db_manager.embed_text(test_text)
-    logging.info(f"Embedding for test text: {embedding}")
+    test_text = "py file."
+    db_manager.add_files_from_project_to_db(python_project_path, "python")
+
+    response = db_manager.query_db(test_text, python_project_path, "python")
+
+    logging.info(f"Embedding for test text: {response}")

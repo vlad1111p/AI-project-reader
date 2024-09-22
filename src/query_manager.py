@@ -5,17 +5,18 @@ from src.llama_ai import OllamaAI
 
 
 class QueryManager:
-    def __init__(self):
+    def __init__(self, language: str):
         self.db_manager = ChromaDBManager()
         self.ollama_ai = OllamaAI()
+        self.language = language
 
     def ingest_relevant_files_from_project(self, project_path):
-        self.db_manager.add_files_from_project_to_db(project_path)
+        self.db_manager.add_files_from_project_to_db(project_path, self.language)
 
     def process_query(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
 
-        query_result = self.db_manager.query_db_by_project(query, project_path)
+        query_result = self.db_manager.query_db(query, project_path, self.language)
 
         if query_result:
             logging.info("Processing query results with OllamaAI...")

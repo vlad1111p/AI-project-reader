@@ -1,15 +1,19 @@
+import logging
 import os
 from glob import glob
 
 
-def read_file(file_path_param):
-    """Reads a single file's content."""
-    with open(file_path_param, "r", encoding="utf-8") as file:
-        return file.read()
+def read_file(file_path):
+    if os.path.getsize(file_path) == 0:
+        logging.warning(f"Skipping empty file: {file_path}")
+        return "empty file"
+    with open(file_path, "r") as file:
+        file_content = file.read().strip()
+    return file_content
 
 
 class FileReader:
-    def __init__(self, project_path, language="java"):
+    def __init__(self, project_path, language):
         self.project_path = project_path
         self.language = language
         self.allowed_extensions = self.get_allowed_extensions()
@@ -42,8 +46,8 @@ class FileReader:
 
 
 if __name__ == "__main__":
-    project_folder = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    file_reader = FileReader(project_folder)
+    project_path_test = "C:/Users/vlad/PycharmProjects/ai-project-reader"
+    file_reader = FileReader(project_path_test, "python")
     files_content = file_reader.read_all_files()
     for file_path, content in files_content.items():
         print(f"File: {file_path}\nContent: {content[:]}...\n")

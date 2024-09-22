@@ -7,9 +7,15 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    user_query = "how can I further improve the classes?"
-
-    query_manager = QueryManager()
-    query_manager.ingest_relevant_files_from_project(project_path)
-    query_manager.process_query(user_query, project_path)
+    java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
+    java_user_query = "how can I further improve the classes?"
+    java_language = "java"
+    java_query_manager = QueryManager(java_language)
+    java_query_manager.ingest_relevant_files_from_project(java_project_path)
+    java_query_manager.process_query(java_user_query, java_project_path)
+    python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
+    python_language = "python"
+    python_user_query = "how can I further improve this project?"
+    python_query_manager = QueryManager(python_language)
+    python_query_manager.ingest_relevant_files_from_project(python_project_path)
+    python_query_manager.process_query(python_user_query, python_project_path)
