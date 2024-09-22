@@ -6,13 +6,13 @@ from chromadb.utils.embedding_functions.ollama_embedding_function import (
     OllamaEmbeddingFunction,
 )
 
-from src.file_reader import FileReader
+from src.util.file_reader import FileReader
 
 
 class ChromaDBManager:
     def __init__(self):
         """Initialize ChromaDB with Ollama embedding functions"""
-        self.client = chromadb.PersistentClient(path="ollama")
+        self.client = chromadb.PersistentClient(path="../ollama")
 
         self.embedding_function = OllamaEmbeddingFunction(
             model_name="mxbai-embed-large",
@@ -87,7 +87,7 @@ class ChromaDBManager:
 
 
 if __name__ == "__main__":
-    python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
+    python_project_path = "/"
     db_manager = ChromaDBManager()
     test_text = "py file."
     db_manager.add_files_from_project_to_db(python_project_path, "python")

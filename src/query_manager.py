@@ -1,7 +1,7 @@
 import logging
 
-from src.chromadb_manager import ChromaDBManager
-from src.database.database import DatabaseManager
+from src.database.chromadb_manager import ChromaDBManager
+from src.database.sql_database_manager import DatabaseManager
 from src.llama_ai import OllamaAI
 
 

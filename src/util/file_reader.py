@@ -46,7 +46,7 @@ class FileReader:
 
 
 if __name__ == "__main__":
-    project_path_test = "C:/Users/vlad/PycharmProjects/ai-project-reader"
+    project_path_test = "/"
     file_reader = FileReader(project_path_test, "python")
     files_content = file_reader.read_all_files()
     for file_path, content in files_content.items():
