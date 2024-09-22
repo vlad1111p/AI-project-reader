@@ -9,18 +9,22 @@ def read_file(file_path_param):
 
 
 class FileReader:
-    def __init__(self, project_path):
+    def __init__(self, project_path, language="java"):
         self.project_path = project_path
-        self.allowed_extensions = [
-            ".java",
-            ".xml",
-            ".properties",
-            ".yml",
-            ".yaml",
-            "pom.xml",
-        ]
+        self.language = language
+        self.allowed_extensions = self.get_allowed_extensions()
+
+    def get_allowed_extensions(self):
+        """Return the allowed file extensions based on the selected language."""
+        if self.language == "java":
+            return [".java", ".xml", ".properties", ".yml", ".yaml", "pom.xml"]
+        elif self.language == "python":
+            return [".py", ".yaml", ".yml", "requirements.txt"]
+        else:
+            raise ValueError(f"Unsupported language: {self.language}")
 
     def read_all_files(self):
+        """Read all relevant files in the project directory."""
         files = self.get_files()
         return {file: read_file(file) for file in files}
 

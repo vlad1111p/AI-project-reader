@@ -8,7 +8,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    user_query = "how can I further improve the class?"
+    user_query = "how can I further improve the classes?"
 
     query_manager = QueryManager()
     query_manager.ingest_relevant_files_from_project(project_path)
