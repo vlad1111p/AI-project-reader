@@ -1,8 +1,8 @@
 import logging
 
+from src.ai.llama_ai import OllamaAI
 from src.database.chromadb_manager import ChromaDBManager
 from src.database.sql_database_manager import DatabaseManager
-from src.llama_ai import OllamaAI
 
 
 class QueryManager:

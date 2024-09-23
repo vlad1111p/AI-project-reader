@@ -1,6 +1,6 @@
 import logging
 
-from src.query_manager import QueryManager
+from src.service.query_manager import QueryManager
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

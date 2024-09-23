@@ -54,7 +54,7 @@ class ChromaDBManager:
                 logging.warning(f"Embedding for '{file_path}' is empty.")
 
     def query_db_by_project_path_and_language(
-            self, query_text: str, project_path: str, language: str
+        self, query_text: str, project_path: str, language: str
     ):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
         query_embedding = self.embed_text(query_text)
