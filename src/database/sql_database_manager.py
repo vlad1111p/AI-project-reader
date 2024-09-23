@@ -1,6 +1,6 @@
 import sqlite3
 
-from src.service.current_context import hash_project_path
+from src.service.utils import hash_project_path
 
 
 def store_chat_context(conn, question, response, project_path):
@@ -47,8 +47,19 @@ class DatabaseManager:
     def get_project_chat_context(self, project_path):
         with self.connect() as conn:
             cursor = conn.cursor()
+            create_table(conn)
             cursor.execute(
-                "SELECT * FROM chat_context WHERE project_path = ?", (project_path,)
+                "SELECT * FROM chat_context WHERE project_path = ?",
+                (hash_project_path(project_path),),
             )
 
             return cursor.fetchall()
+
+
+if __name__ == "__main__":
+    database = DatabaseManager()
+    print(
+        database.get_project_chat_context(
+            "C:/Users/vlad/PycharmProjects/ai-project-reader"
+        )
+    )
