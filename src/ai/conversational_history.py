@@ -90,4 +90,4 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
 
     def load_memory_variables(self, variables: Dict) -> Dict[str, Any]:
         """Load memory variables, including the conversation history."""
-        return {"chat_history": self.conversation_history}  # Return a list of message objects
+        return {"chat_history": self.conversation_history}
