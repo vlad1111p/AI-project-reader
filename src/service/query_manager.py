@@ -32,7 +32,7 @@ class QueryManager:
                     "Respond based on the context of the query."
                 )
 
-                response = self.ollama_ai.query_ollama(prompt, project_path)
+                response = self.ollama_ai.query_ollama(query, prompt, project_path)
                 print(f"Response for Document {i + 1}: {response}")
 
         else:

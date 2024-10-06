@@ -1,4 +1,5 @@
 import logging
+from hashlib import md5
 
 import chromadb
 from chromadb.errors import InvalidCollectionException
@@ -26,20 +27,33 @@ class ChromaDBManager:
             logging.info("Collection 'documents' created.")
 
     def add_files_from_project_to_db(self, project_path, language):
-        """Add all files from the project path to the database."""
+        """Add or update files from the project path to the database."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
 
         for file_path, content in files_contents.items():
-            self.add_file_to_db(project_path, file_path, content, language)
+            embedding_id = file_path
+            existing_docs = self.collection.get(ids=[embedding_id])
+            if existing_docs["documents"]:
+                stored_content = existing_docs["documents"][0]
+                if md5(stored_content.encode()).hexdigest() == md5(content.encode()).hexdigest():
+                    logging.info(f"File '{file_path}' is unchanged.")
+                else:
+                    logging.info(f"File '{file_path}' has been modified, updating...")
+                    self.collection.delete(ids=[embedding_id])
+                    self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
+            else:
+                self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
 
-    def add_file_to_db(self, project_path, file_path, file_content, language):
+    def add_file_to_db_by_project_and_language(
+            self, project_path, file_path, file_content, language
+    ):
         """Add a single file to the ChromaDB along with its metadata."""
         embedding_id = file_path
 
         existing_docs = self.collection.get(ids=[embedding_id])
         if existing_docs["documents"]:
-            logging.warning(f"Embedding ID '{embedding_id}' already exists.")
+            logging.info(f"Embedding ID '{embedding_id}' already exists.")
         else:
             to_embedding = self.embed_text(file_content)
             if to_embedding:
@@ -51,10 +65,10 @@ class ChromaDBManager:
                 )
                 logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
             else:
-                logging.warning(f"Embedding for '{file_path}' is empty.")
+                logging.info(f"Embedding for '{file_path}' is empty.")
 
     def query_db_by_project_path_and_language(
-        self, query_text: str, project_path: str, language: str
+            self, query_text: str, project_path: str, language: str
     ):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
         query_embedding = self.embed_text(query_text)
