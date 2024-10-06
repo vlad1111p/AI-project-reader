@@ -12,7 +12,7 @@ class DatabaseManager:
     def __init__(self):
         self.conn = connect()
 
-    def connect_and_execute_query(self, question: str, response: str, project_path: str):
+    def connect_and_store_chat_context(self, question: str, response: str, project_path: str):
         self.create_table()
         self.store_chat_context(
             question, response, hash_project_path(project_path)

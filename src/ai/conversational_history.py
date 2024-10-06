@@ -25,8 +25,12 @@ def format_db_history(chat_history):
     for row in chat_history:
         question = row[0]
         response = row[1]
-        formatted_history.append(HumanMessage(content=question))
-        formatted_history.append(AIMessage(content=response))
+
+        if isinstance(question, str) and question.strip():
+            formatted_history.append(HumanMessage(content=question))
+        if isinstance(response, str) and response.strip():
+            formatted_history.append(AIMessage(content=response))
+
     return formatted_history
 
 
@@ -38,21 +42,18 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
 
     conversation_history: List[BaseMessage] = []
 
-    def __post_init__(self):
-        """Perform post-initialization setup."""
-        self.load_db_history()
-
     def set_db_manager_and_project(self, db_manager, project_path: str):
         """Set the database manager and project path."""
         self._db_manager = db_manager
         self._project_path = project_path
+        self.load_db_history()
 
     def load_db_history(self):
         """Load history from the database and convert it into memory."""
         chat_history = self._db_manager.get_project_chat_context(self._project_path)
 
-        print("------------------------")
-        print(chat_history)
+        # print("------------chat_history------------")
+        # print(chat_history)
         formatted_history = format_db_history(chat_history)
         self.set_conversation_history(formatted_history)
 
@@ -72,12 +73,14 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
         super().save_context(inputs, outputs)
         self.conversation_history = self.chat_memory.messages
         self.prune()
-
+        #
+        # print("---------Buffer---------------")
+        # print(self.moving_summary_buffer)
         self.save_to_db(new_input, new_output)
 
     def save_to_db(self, question: str, response: str):
         """Save the latest question and response to the database."""
-        self._db_manager.connect_and_execute_query(question, response, self._project_path)
+        self._db_manager.connect_and_store_chat_context(question, response, self._project_path)
 
     def load_memory_variables(self, variables: Dict) -> Dict[str, Any]:
         """Load memory variables, including the conversation history."""

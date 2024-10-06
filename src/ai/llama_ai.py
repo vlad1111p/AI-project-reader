@@ -35,7 +35,6 @@ class OllamaAI:
 
     def query_ollama(self, query: str, user_input: str, project_path: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
-
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
         memory_vars = self.memory.load_memory_variables({})
@@ -43,6 +42,9 @@ class OllamaAI:
 
         if not isinstance(chat_history, list):
             chat_history = []
+
+        print("-------------------------chat history")
+        print(memory_vars)
 
         response = self.conversation_chain.invoke({
             "query": user_input,
