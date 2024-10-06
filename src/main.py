@@ -13,13 +13,11 @@ if __name__ == "__main__":
     # java_user_query = "how can I further improve the classes?"
     # java_language = "java"
     # java_query_manager = QueryManager(java_language)
-    # java_query_manager.ingest_relevant_files_from_project(java_project_path)
     # java_query_manager.process_query(java_user_query, java_project_path)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "how to refactor the project  "
+    python_user_query = "tell me all the ways to refactor the project and which files should i refactor "
     python_query_manager = QueryManager(python_language)
-    python_query_manager.ingest_relevant_files_from_project(python_project_path)
     python_query_manager.process_query(python_user_query, python_project_path)
 
     sql_manager = DatabaseManager()

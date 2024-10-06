@@ -50,7 +50,6 @@ class OllamaAI:
 
         # TODO change ChatPromptTemplate to include section of content and not add prompt as query
         # https://python.langchain.com/docs/versions/migrating_memory/long_term_memory_agent/ use this to change project to use tools
-        # Also https://python.langchain.com/docs/integrations/vectorstores/chroma/ change the format of current chroma to use langchain chroma
 
         response = self.conversation_chain.invoke({
             "query": prompt,
