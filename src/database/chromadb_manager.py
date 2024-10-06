@@ -72,7 +72,6 @@ class ChromaDBManager:
     def embed_text(self, text: str):
         """Generate embeddings for the given text."""
         try:
-            logging.info(f"Embedding for text: {text}")
             to_embedding = self.embedding_function([text])
             return to_embedding[0] if to_embedding else None
         except Exception as e:
@@ -80,13 +79,21 @@ class ChromaDBManager:
 
     def query_db_by_project_path_and_language(self, query_text: str, project_path: str, language: str):
         """Use the retriever to query the ChromaDB for relevant documents."""
-        logging.info("Querying ChromaDB using retriever...")
-        query_result = self.retriever.get_relevant_documents(query_text)
+        logging.info(f"Querying ChromaDB using retriever for project '{project_path}' and language '{language}'...")
+
+        query_result = self.retriever.get_relevant_documents(
+            query_text,
+            where={
+                "project_path": {"$eq": project_path},
+                "language": {"$eq": language}
+            }
+        )
+
         return query_result
 
     def update_retriever(self):
         """Update the retriever after documents are added or updated."""
-        documents = self.collection.get(ids=None)  # Retrieve all documents
+        documents = self.collection.get(ids=None)
         formatted_documents = [
             Document(page_content=doc, metadata=meta)
             for doc, meta in zip(documents["documents"], documents["metadatas"])
