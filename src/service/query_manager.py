@@ -20,23 +20,13 @@ class QueryManager:
             query, project_path, self.language
         )
 
-        if query_result:
-            logging.info("Processing query results with OllamaAI...")
-            for i, document_content in enumerate(query_result):
-                logging.info(f"Processing document {i + 1}...")
+        prompt = (
+            f"The following is the content of files related to your query: '{query}'. "
+            f"Based on your query, please provide an answer or further explanation related to the content.\n\n"
+            f"{query_result}\n\n"
+            "Respond based on the context of the query."
+        )
 
-                prompt = (
-                    f"The following are documents related to the project '{project_path}' in response to the query '{query}':\n\n"
-                    f"Document {i + 1} content:\n"
-                    f"{document_content}\n\n"
-                    "Please provide an analysis or explanation based on the document and your knowledge.\n"
-                    "Use the query context and recent chat history, if relevant, to provide a response.\n"
-                    "Ensure that the response incorporates the relevant project context."
-                )
-
-                response = self.ollama_ai.query_ollama(prompt, query, project_path)
-                print("----------------------Response----------------")
-                print(f"Response for Document {i + 1}: {response}")
-
-        else:
-            logging.info("No relevant files found for the query.")
+        response = self.ollama_ai.query_ollama(prompt, query, project_path)
+        print("----------------------Response----------------")
+        print(f"Response for Document : {response}")
