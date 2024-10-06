@@ -10,9 +10,6 @@ class QueryManager:
         self.ollama_ai = OllamaAI()
         self.language = language
 
-    def ingest_relevant_files_from_project(self, project_path: str):
-        self.chroma_db_manager.add_files_from_project_to_db(project_path, self.language)
-
     def process_query(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
 

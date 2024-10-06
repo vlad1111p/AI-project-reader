@@ -3,13 +3,13 @@ import os
 from glob import glob
 
 
-def read_file(file_path):
+def _read_file(file_path):
+    """Return content of a single file."""
     if os.path.getsize(file_path) == 0:
         logging.warning(f"Skipping empty file: {file_path}")
         return "empty file"
     with open(file_path, "r") as file:
-        file_content = file.read().strip()
-    return file_content
+        return file.read().strip()
 
 
 class FileReader:
@@ -27,27 +27,13 @@ class FileReader:
         else:
             raise ValueError(f"Unsupported language: {self.language}")
 
-    def read_all_files(self):
-        """Read all relevant files in the project directory."""
-        files = self.get_files()
-        return {file: read_file(file) for file in files}
+    def read_files(self):
+        """Read all files in the project directory."""
+        return {file: _read_file(file) for file in self._get_files()}
 
-    def get_files(self):
-        """Get all relevant files in the project directory based on file extensions."""
+    def _get_files(self):
+        """Fetch all relevant files."""
         files = []
-        for extension in self.allowed_extensions:
-            files.extend(
-                glob(
-                    os.path.join(self.project_path, "**", f"*{extension}"),
-                    recursive=True,
-                )
-            )
+        for ext in self.allowed_extensions:
+            files.extend(glob(os.path.join(self.project_path, "**", f"*{ext}"), recursive=True))
         return files
-
-
-if __name__ == "__main__":
-    project_path_test = "C:/Users/vlad/PycharmProjects/ai-project-reader"
-    file_reader = FileReader(project_path_test, "python")
-    files_content = file_reader.read_all_files()
-    for file, content in files_content.items():
-        print(f"File: {file}\nContent: {content[:]}...\n")

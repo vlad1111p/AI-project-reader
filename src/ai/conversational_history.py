@@ -52,8 +52,8 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
         """Load history from the database and convert it into memory."""
         chat_history = self._db_manager.get_project_chat_context(self._project_path)
 
-        # print("------------chat_history------------")
-        # print(chat_history)
+        print("------------chat_history------------")
+        print(chat_history)
         formatted_history = format_db_history(chat_history)
         self.set_conversation_history(formatted_history)
 
