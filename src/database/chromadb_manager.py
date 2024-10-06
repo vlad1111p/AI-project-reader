@@ -46,10 +46,13 @@ class ChromaDBManager:
 
     def add_file_to_db_by_project_and_language(self, project_path, file_path, file_content, language):
         """Add a single file to the ChromaDB along with its metadata."""
-        chunks = self.text_splitter.split_text(file_content)
         self.vectorstore.add_texts(
-            texts=chunks,
-            metadatas=[{"project_path": project_path, "language": language, "id": file_path}] * len(chunks)
+            texts=[file_content],
+            metadatas=[{
+                "project_path": project_path,
+                "language": language,
+                "id": file_path
+            }]
         )
         logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
 
