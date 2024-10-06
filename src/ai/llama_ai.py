@@ -7,7 +7,6 @@ from langchain.schema import SystemMessage
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableSequence
 from langchain_ollama import ChatOllama
-from transformers import GPT2Tokenizer
 
 from src.ai.conversational_history import CustomConversationBufferMemory
 from src.database.sql_database_manager import DatabaseManager
@@ -18,7 +17,6 @@ class OllamaAI:
         """Initialize the Ollama model for chat and set up memory"""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
         self.sql_db_manager = DatabaseManager()
-        self.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
         self.memory = CustomConversationBufferMemory(llm=self.llm)
         self.prompt_template = ChatPromptTemplate(
@@ -57,12 +55,3 @@ class OllamaAI:
         self.memory.save_context({"input": query}, {"output": response})
 
         return response
-
-    def truncate(self, text: str, max_tokens: int = 512) -> str:
-        """Truncate the input text to fit within the model's token limit."""
-        tokens = self.tokenizer.encode(text, return_tensors="pt").tolist()
-        if len(tokens[0]) > max_tokens:
-            truncated_tokens = tokens[0][:max_tokens]
-            truncated_text = self.tokenizer.decode(truncated_tokens, skip_special_tokens=True)
-            return truncated_text
-        return text

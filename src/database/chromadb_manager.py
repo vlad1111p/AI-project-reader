@@ -1,4 +1,5 @@
 import logging
+from hashlib import md5
 
 import chromadb
 from chromadb.errors import InvalidCollectionException
@@ -26,14 +27,23 @@ class ChromaDBManager:
             logging.info("Collection 'documents' created.")
 
     def add_files_from_project_to_db(self, project_path, language):
-        """Add all files from the project path to the database."""
+        """Add or update files from the project path to the database."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
 
         for file_path, content in files_contents.items():
-            self.add_file_to_db_by_project_and_language(
-                project_path, file_path, content, language
-            )
+            embedding_id = file_path
+            existing_docs = self.collection.get(ids=[embedding_id])
+            if existing_docs["documents"]:
+                stored_content = existing_docs["documents"][0]
+                if md5(stored_content.encode()).hexdigest() == md5(content.encode()).hexdigest():
+                    logging.info(f"File '{file_path}' is unchanged.")
+                else:
+                    logging.info(f"File '{file_path}' has been modified, updating...")
+                    self.collection.delete(ids=[embedding_id])
+                    self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
+            else:
+                self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
 
     def add_file_to_db_by_project_and_language(
             self, project_path, file_path, file_content, language
