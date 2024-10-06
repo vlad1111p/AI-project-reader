@@ -17,7 +17,7 @@ class OllamaAI:
         """Initialize the Ollama model for chat and set up memory"""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
         self.sql_db_manager = DatabaseManager()
-        
+
         self.memory = CustomConversationBufferMemory(llm=self.llm)
         self.prompt_template = ChatPromptTemplate(
             messages=[
@@ -47,6 +47,10 @@ class OllamaAI:
             f"{query_result}\n\n"
             "Respond based on the context of the query."
         )
+
+        # TODO change ChatPromptTemplate to include section of content and not add prompt as query
+        # https://python.langchain.com/docs/versions/migrating_memory/long_term_memory_agent/ use this to change project to use tools
+        # Also https://python.langchain.com/docs/integrations/vectorstores/chroma/ change the format of current chroma to use langchain chroma
 
         response = self.conversation_chain.invoke({
             "query": prompt,

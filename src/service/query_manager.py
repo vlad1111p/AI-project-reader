@@ -1,6 +1,6 @@
 import logging
 
-from src.ai.llama_ai import OllamaAI
+from src.ai.ollama_ai import OllamaAI
 from src.database.chromadb_manager import ChromaDBManager
 
 

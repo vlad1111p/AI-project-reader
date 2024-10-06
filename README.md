@@ -26,7 +26,7 @@ queries related to the project files, and stores both queries and AI responses i
 ```bash
 ├── src/
 │   ├── ai/
-│   │   ├── llama_ai.py         # Manages AI queries and responses using OllamaAI
+│   │   ├── ollama_ai.py         # Manages AI queries and responses using OllamaAI
 │   │   └── conversational_history.py # Custom conversation buffer memory to interact with AI
 │   ├── database/
 │   │   ├── chromadb_manager.py # Handles ChromaDB for file ingestion and querying

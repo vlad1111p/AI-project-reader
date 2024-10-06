@@ -1,111 +1,65 @@
 import logging
 from hashlib import md5
 
-import chromadb
-from chromadb.errors import InvalidCollectionException
-from chromadb.utils.embedding_functions.ollama_embedding_function import (
-    OllamaEmbeddingFunction,
-)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import Chroma
 
+from src.ai.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
 from src.util.file_reader import FileReader
 
 
 class ChromaDBManager:
     def __init__(self):
-        """Initialize ChromaDB with Ollama embedding functions"""
-        self.client = chromadb.PersistentClient(path="../ollama")
-
-        self.embedding_function = OllamaEmbeddingFunction(
+        """Initialize ChromaDB with Ollama embedding functions through a LangChain wrapper."""
+        self.embedding_function = OllamaLangchainEmbeddings(
             model_name="mxbai-embed-large",
-            url="http://localhost:11434/api/embeddings",
+            url="http://localhost:11434/api/embeddings"
         )
-        try:
-            self.collection = self.client.get_collection("documents")
-            logging.info("Collection 'documents' retrieved.")
-        except InvalidCollectionException:
-            self.collection = self.client.create_collection("documents")
-            logging.info("Collection 'documents' created.")
+
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        self.vectorstore = Chroma(collection_name="documents", embedding_function=self.embedding_function)
 
     def add_files_from_project_to_db(self, project_path, language):
-        """Add or update files from the project path to the database."""
+        """Add or update files from the project path to the database using langchain-chroma."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
 
         for file_path, content in files_contents.items():
-            embedding_id = file_path
-            existing_docs = self.collection.get(ids=[embedding_id])
-            if existing_docs["documents"]:
-                stored_content = existing_docs["documents"][0]
+            existing_docs = self.vectorstore.similarity_search(content)
+
+            if existing_docs:
+                stored_content = existing_docs[0].page_content
                 if md5(stored_content.encode()).hexdigest() == md5(content.encode()).hexdigest():
                     logging.info(f"File '{file_path}' is unchanged.")
                 else:
                     logging.info(f"File '{file_path}' has been modified, updating...")
-                    self.collection.delete(ids=[embedding_id])
+                    self.vectorstore.delete(
+                        ids=[existing_docs[0].metadata['id']])
                     self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
             else:
                 self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
 
-    def add_file_to_db_by_project_and_language(
-            self, project_path, file_path, file_content, language
-    ):
+    def add_file_to_db_by_project_and_language(self, project_path, file_path, file_content, language):
         """Add a single file to the ChromaDB along with its metadata."""
-        embedding_id = file_path
+        chunks = self.text_splitter.split_text(file_content)
+        self.vectorstore.add_texts(
+            texts=chunks,
+            metadatas=[{"project_path": project_path, "language": language, "id": file_path}] * len(chunks)
+        )
+        logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
 
-        existing_docs = self.collection.get(ids=[embedding_id])
-        if existing_docs["documents"]:
-            logging.info(f"Embedding ID '{embedding_id}' already exists.")
-        else:
-            to_embedding = self.embed_text(file_content)
-            if to_embedding:
-                self.collection.add(
-                    documents=[file_content],
-                    ids=[embedding_id],
-                    embeddings=[to_embedding],
-                    metadatas=[{"project_path": project_path, "language": language}],
-                )
-                logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
-            else:
-                logging.info(f"Embedding for '{file_path}' is empty.")
-
-    def query_db_by_project_path_and_language(
-            self, query_text: str, project_path: str, language: str
-    ):
+    def query_db_by_project_path_and_language(self, query_text: str, project_path: str, language: str):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
-        query_embedding = self.embed_text(query_text)
+        query_embedding = self.embedding_function.embed_query(query_text)
+
         if query_embedding:
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=4,
-                where={
-                    "$and": [
-                        {"project_path": {"$eq": project_path}},
-                        {"language": {"$eq": language}},
-                    ]
-                },
-            )
-            return results["documents"] if results else None
+            results = self.vectorstore.similarity_search(query_text)
+            filtered_results = [
+                result for result in results
+                if result.metadata["project_path"] == project_path and result.metadata["language"] == language
+            ]
+
+            return filtered_results if filtered_results else None
         else:
-            logging.info(
-                f"Embedding for query '{query_text}' is empty, skipping query."
-            )
+            logging.info(f"Embedding for query '{query_text}' is empty, skipping query.")
             return None
-
-    def embed_text(self, text: str):
-        """Generate embeddings for the given text using Ollama's embedding model."""
-        try:
-            logging.info(f"Embedding for test text: {str}")
-            to_embedding = self.embedding_function([text])
-            return to_embedding[0] if to_embedding else None
-        except Exception as e:
-            raise ValueError(f"Failed to generate embeddings: {e}")
-
-
-if __name__ == "__main__":
-    python_project_path = "/"
-    db_manager = ChromaDBManager()
-    test_text = "py file."
-    db_manager.add_files_from_project_to_db(python_project_path, "python")
-    response = db_manager.query_db_by_project_path_and_language(
-        test_text, python_project_path, "python"
-    )
-    logging.info(f"Embedding for test text: {response}")
