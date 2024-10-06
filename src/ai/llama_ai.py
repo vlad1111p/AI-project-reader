@@ -31,7 +31,7 @@ class OllamaAI:
 
         self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
 
-    def query_ollama(self, query: str, user_input: str, project_path: str) -> str:
+    def query_ollama(self, query: str, prompt: str, project_path: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
@@ -45,7 +45,7 @@ class OllamaAI:
         print(memory_vars)
 
         response = self.conversation_chain.invoke({
-            "query": user_input,
+            "query": prompt,
             "chat_history": chat_history
         })
 
