@@ -17,7 +17,7 @@ class OllamaAI:
         """Initialize the Ollama model for chat and set up memory"""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
         self.sql_db_manager = DatabaseManager()
-
+        
         self.memory = CustomConversationBufferMemory(llm=self.llm)
         self.prompt_template = ChatPromptTemplate(
             messages=[
@@ -31,7 +31,7 @@ class OllamaAI:
 
         self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
 
-    def query_ollama(self, query: str, prompt: str, project_path: str) -> str:
+    def query_ollama(self, query: str, query_result, project_path: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
@@ -41,8 +41,12 @@ class OllamaAI:
         if not isinstance(chat_history, list):
             chat_history = []
 
-        print("-------------------------chat history")
-        print(memory_vars)
+        prompt = (
+            f"The following is the content of files related to your query: '{query}'. "
+            f"Based on your query, please provide an answer or further explanation related to the content.\n\n"
+            f"{query_result}\n\n"
+            "Respond based on the context of the query."
+        )
 
         response = self.conversation_chain.invoke({
             "query": prompt,

@@ -28,9 +28,8 @@ def format_db_history(chat_history):
 
         # print("----------------dbformattoconversation-----------")
         # print(chat_history)
-
-        print(question)
-        print(response)
+        # print(question)
+        # print(response)
 
         if isinstance(question, str) and question.strip():
             formatted_history.append(HumanMessage(content=question))
@@ -58,8 +57,8 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
         """Load history from the database and convert it into memory."""
         chat_history = self._db_manager.get_project_chat_context(self._project_path)
 
-        print("------------chat_history------------")
-        print(chat_history)
+        # print("------------chat_history------------")
+        # print(chat_history)
         formatted_history = format_db_history(chat_history)
         self.set_conversation_history(formatted_history)
 
@@ -80,8 +79,8 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
         self.conversation_history = self.chat_memory.messages
         self.prune()
 
-        print("---------Buffer---------------")
-        print(self.moving_summary_buffer)
+        # print("---------Buffer---------------")
+        # print(self.moving_summary_buffer)
         self.save_to_db(new_input, new_output)
 
     def save_to_db(self, question: str, response: str):
@@ -90,4 +89,4 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
 
     def load_memory_variables(self, variables: Dict) -> Dict[str, Any]:
         """Load memory variables, including the conversation history."""
-        return {"chat_history": self.conversation_history}  # Return a list of message objects
+        return {"chat_history": self.conversation_history}

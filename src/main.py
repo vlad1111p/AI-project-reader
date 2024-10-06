@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # java_query_manager.process_query(java_user_query, java_project_path)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "List me all my previous questions?"
+    python_user_query = "tell me what my previous question was about. i want to check if CustomConversationBufferMemory works and you can keep track on my conversation "
     python_query_manager = QueryManager(python_language)
     python_query_manager.ingest_relevant_files_from_project(python_project_path)
     python_query_manager.process_query(python_user_query, python_project_path)

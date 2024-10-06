@@ -20,13 +20,6 @@ class QueryManager:
             query, project_path, self.language
         )
 
-        prompt = (
-            f"The following is the content of files related to your query: '{query}'. "
-            f"Based on your query, please provide an answer or further explanation related to the content.\n\n"
-            f"{query_result}\n\n"
-            "Respond based on the context of the query."
-        )
-
-        response = self.ollama_ai.query_ollama(query, prompt, project_path)
+        response = self.ollama_ai.query_ollama(query, query_result, project_path)
         print("----------------------Response----------------")
         print(f"Response for Document : {response}")
