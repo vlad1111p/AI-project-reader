@@ -26,8 +26,8 @@ def format_db_history(chat_history):
         question = row[1]
         response = row[2]
 
-        print("----------------dbformattoconversation-----------")
-        print(chat_history)
+        # print("----------------dbformattoconversation-----------")
+        # print(chat_history)
 
         print(question)
         print(response)
