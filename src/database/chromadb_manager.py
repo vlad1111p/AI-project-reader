@@ -1,6 +1,7 @@
 import logging
 from hashlib import md5
 
+import chromadb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 
@@ -11,13 +12,17 @@ from src.util.file_reader import FileReader
 class ChromaDBManager:
     def __init__(self):
         """Initialize ChromaDB with Ollama embedding functions through a LangChain wrapper."""
+
+        self.persistent_client = chromadb.PersistentClient(path="../ollama")
+        self.persistent_client.get_or_create_collection("documents")
+
         self.embedding_function = OllamaLangchainEmbeddings(
             model_name="mxbai-embed-large",
             url="http://localhost:11434/api/embeddings"
         )
-
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        self.vectorstore = Chroma(collection_name="documents", embedding_function=self.embedding_function)
+        self.vectorstore = Chroma(client=self.persistent_client, collection_name="documents",
+                                  embedding_function=self.embedding_function)
 
     def add_files_from_project_to_db(self, project_path, language):
         """Add or update files from the project path to the database using langchain-chroma."""
@@ -53,13 +58,14 @@ class ChromaDBManager:
         query_embedding = self.embedding_function.embed_query(query_text)
 
         if query_embedding:
-            results = self.vectorstore.similarity_search(query_text)
-            filtered_results = [
-                result for result in results
-                if result.metadata["project_path"] == project_path and result.metadata["language"] == language
-            ]
-
-            return filtered_results if filtered_results else None
+            filter_conditions = {
+                "$and": [
+                    {"project_path": {"$eq": project_path}},
+                    {"language": {"$eq": language}}
+                ]
+            }
+            results = self.vectorstore.similarity_search(query_text, k=4, filter=filter_conditions)
+            return results if results else None
         else:
             logging.info(f"Embedding for query '{query_text}' is empty, skipping query.")
             return None
