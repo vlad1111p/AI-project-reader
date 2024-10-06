@@ -22,7 +22,8 @@ class OllamaAI:
         self.prompt_template = ChatPromptTemplate(
             messages=[
                 SystemMessage(
-                    content="You are an assistant that provides help with python or java applications."
+                    content="You are a helpful assistant. Use the following chat history and the user's query to "
+                            "provide a detailed and context-aware response based on prior discussions."
                 ),
                 MessagesPlaceholder(variable_name="chat_history"),
                 HumanMessagePromptTemplate.from_template("{query}"),
@@ -31,27 +32,21 @@ class OllamaAI:
 
         self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
 
-    def query_ollama(self, query: str, user_input: str, project_path: str) -> str:
+    def query_ollama(self, prompt: str, user_input: str, project_path: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
-        memory_vars = self.memory.load_memory_variables({})
-        chat_history = memory_vars.get("history", [])
-
-        if not isinstance(chat_history, list):
-            chat_history = []
-
         print("-------------------------chat history")
-        print(memory_vars)
+        print(self.memory.load_memory_variables({})["chat_history"])
 
         response = self.conversation_chain.invoke({
-            "query": user_input,
-            "chat_history": chat_history
+            "query": prompt,
+            "chat_history": self.memory.load_memory_variables({})["chat_history"]
         })
 
         if isinstance(response, AIMessage):
             response = response.content
 
-        self.memory.save_context({"input": query}, {"output": response})
+        self.memory.save_context({"input": user_input}, {"output": response})
 
         return response
