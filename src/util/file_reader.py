@@ -49,5 +49,5 @@ if __name__ == "__main__":
     project_path_test = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     file_reader = FileReader(project_path_test, "python")
     files_content = file_reader.read_all_files()
-    for file, content in files_content.items():
-        print(f"File: {file}\nContent: {content[:]}...\n")
+    for file_item, content in files_content.items():
+        print(f"File: {file_item}\nContent: {content[:]}...\n")

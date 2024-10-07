@@ -66,8 +66,11 @@ class ChromaDBManager:
                     {"language": {"$eq": language}}
                 ]
             }
-            results = self.vectorstore.similarity_search(query_text, k=4, filter=filter_conditions)
-            return results if results else None
+            # noinspection PyTypeChecker
+            results = self.vectorstore.similarity_search(query_text, k=10, filter=filter_conditions)
+            unique_files = {result.metadata['id']: result for result in results}.values()
+
+            return list(unique_files) if unique_files else None
         else:
             logging.info(f"Embedding for query '{query_text}' is empty, skipping query.")
             return None
