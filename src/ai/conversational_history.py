@@ -23,13 +23,8 @@ def format_db_history(chat_history):
     """Format chat history from the DB into the format required by memory."""
     formatted_history = []
     for row in chat_history:
-        question = row[1]
-        response = row[2]
-
-        # print("----------------dbformattoconversation-----------")
-        # print(chat_history)
-        # print(question)
-        # print(response)
+        question = row.question
+        response = row.response
 
         if isinstance(question, str) and question.strip():
             formatted_history.append(HumanMessage(content=question))

@@ -57,7 +57,13 @@ class ChromaDBManager:
 
     def query_db_by_project_path_and_language(self, query_text: str, project_path: str, language: str):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
-        query_embedding = self.embedding_function.embed_query(query_text)
+        if "refactor" in query_text.lower():
+            general_refactor_query = ("Identify ways to refactor code in a project. Focus on improving structure, "
+                                      "reducing complexity, and cleaning up large functions or classes.")
+            combined_query = f"{general_refactor_query} {query_text}"
+        else:
+            combined_query = query_text
+        query_embedding = self.embedding_function.embed_query(combined_query)
 
         if query_embedding:
             filter_conditions = {

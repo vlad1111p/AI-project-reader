@@ -3,8 +3,7 @@ from langchain.prompts import (
     MessagesPlaceholder,
     HumanMessagePromptTemplate,
 )
-from langchain.schema import SystemMessage
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from langchain_core.runnables import RunnableSequence
 from langchain_ollama import ChatOllama
 
@@ -21,22 +20,19 @@ class OllamaAI:
         self.memory = CustomConversationBufferMemory(llm=self.llm)
 
         self.prompt_template = ChatPromptTemplate(
-            messages=[
+            [
                 SystemMessage(
                     content="You are an assistant that provides help with Python or Java applications by analyzing "
-                            "project files."
-                ),
+                            "project files."),
                 MessagesPlaceholder(variable_name="chat_history"),
-                SystemMessage(
-                    content="Here is the relevant content from the project files:\n\n{query_result}"
-                ),
+                SystemMessage(content="Let me analyze the following file content:  {query_result}"),
                 HumanMessagePromptTemplate.from_template("{query}"),
             ]
         )
 
         self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
 
-    def query_ollama(self, query: str, query_result: str, project_path: str) -> str:
+    def query_ollama(self, query: str, query_result: list, project_path: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
@@ -46,11 +42,12 @@ class OllamaAI:
         if not isinstance(chat_history, list):
             chat_history = []
 
-        response = self.conversation_chain.invoke({
+        prompt_variables = {
             "query": query,
             "query_result": query_result,
             "chat_history": chat_history
-        })
+        }
+        response = self.conversation_chain.invoke(prompt_variables)
 
         if isinstance(response, AIMessage):
             response = response.content

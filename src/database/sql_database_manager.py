@@ -1,60 +1,64 @@
-import sqlite3
+from sqlalchemy import Column, String, Text, Integer, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.service.utils import hash_project_path
 
+Base = declarative_base()
 
-def connect():
-    """Establish a new database connection."""
-    return sqlite3.connect("queries.db")
+
+class ChatContext(Base):
+    __tablename__ = 'chat_context'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    question = Column(Text, nullable=False)
+    response = Column(Text, nullable=True)
+    project_path = Column(String, nullable=False)
 
 
 class DatabaseManager:
-    def __init__(self):
-        self.conn = connect()
+    def __init__(self, db_url="sqlite:///queries.db"):
+        """Initialize the database manager and create a session."""
+        self.engine = create_engine(db_url)
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
 
     def connect_and_store_chat_context(self, question: str, response: str, project_path: str):
+        """Create table and store chat context in the database."""
         self.create_table()
         self.store_chat_context(
             question, response, hash_project_path(project_path)
         )
 
     def store_chat_context(self, question: str, response: str, project_path: str):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "INSERT INTO chat_context (question, response, project_path) VALUES (?, ?, ?)",
-            (question, response, project_path),
+        """Store chat context in the chat_context table."""
+        chat_context = ChatContext(
+            question=question,
+            response=response,
+            project_path=project_path
         )
-        self.conn.commit()
+        self.session.add(chat_context)
+        self.session.commit()
 
-    def get_project_chat_context(self, project_path):
-        cursor = self.conn.cursor()
-        self.create_table()
-        cursor.execute(
-            "SELECT * FROM chat_context WHERE project_path = ?",
-            (hash_project_path(project_path),),
-        )
-
-        return cursor.fetchall()
+    def get_project_chat_context(self, project_path: str):
+        """Retrieve chat context for a specific project path."""
+        hashed_project_path = hash_project_path(project_path)
+        return self.session.query(ChatContext).filter_by(project_path=hashed_project_path).all()
 
     def create_table(self):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS chat_context (
-                id INTEGER PRIMARY KEY,
-                question TEXT NOT NULL,
-                response TEXT,
-                project_path TEXT
-            )
-        """
-        )
-        self.conn.commit()
+        """Ensure the chat_context table exists."""
+        Base.metadata.create_all(self.engine)
+
+    def close(self):
+        """Close the session."""
+        self.session.close()
 
 
 if __name__ == "__main__":
     database = DatabaseManager()
-    print(
-        database.get_project_chat_context(
-            "C:/Users/vlad/PycharmProjects/ai-project-reader"
-        )
+    context = database.get_project_chat_context(
+        "C:/Users/vlad/PycharmProjects/ai-project-reader"
     )
+    for row in context:
+        print(f"Question: {row.question}, Response: {row.response}, Project Path: {row.project_path}")
+    database.close()
