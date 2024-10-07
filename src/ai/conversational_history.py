@@ -51,9 +51,6 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
     def load_db_history(self):
         """Load history from the database and convert it into memory."""
         chat_history = self._db_manager.get_project_chat_context(self._project_path)
-
-        # print("------------chat_history------------")
-        # print(chat_history)
         formatted_history = format_db_history(chat_history)
         self.set_conversation_history(formatted_history)
 
@@ -73,9 +70,6 @@ class CustomConversationBufferMemory(ConversationSummaryBufferMemory):
         super().save_context(inputs, outputs)
         self.conversation_history = self.chat_memory.messages
         self.prune()
-
-        # print("---------Buffer---------------")
-        # print(self.moving_summary_buffer)
         self.save_to_db(new_input, new_output)
 
     def save_to_db(self, question: str, response: str):

@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # java_query_manager.process_query(java_user_query, java_project_path)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "tell me how i should refactor chromadb_manager.py and write the refactored version directly "
+    python_user_query = "Can you analyze the structure of main.py and tell me how large it is?"
     python_query_manager = QueryManager(python_language)
     python_query_manager.process_query(python_user_query, python_project_path)
 

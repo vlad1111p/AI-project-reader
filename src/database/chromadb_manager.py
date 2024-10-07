@@ -2,7 +2,7 @@ import logging
 from hashlib import md5
 
 import chromadb
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 
 from src.ai.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
 from src.util.file_reader import FileReader

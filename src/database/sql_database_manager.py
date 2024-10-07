@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Text, Integer, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from src.service.utils import hash_project_path
+from src.util.utils import hash_project_path
 
 Base = declarative_base()
 

@@ -17,6 +17,6 @@ class QueryManager:
             query, project_path, self.language
         )
 
-        response = self.ollama_ai.query_ollama(query, query_result, project_path)
+        response = self.ollama_ai.query_ollama(query, query_result, project_path, self.language)
         print("----------------------Response----------------")
         print(f"Response for Document : {response}")

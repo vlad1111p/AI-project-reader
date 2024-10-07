@@ -9,6 +9,7 @@ from langchain_ollama import ChatOllama
 
 from src.ai.conversational_history import CustomConversationBufferMemory
 from src.database.sql_database_manager import DatabaseManager
+from src.util.tools import analyze_file, fetch_api_doc, get_git_history
 
 
 class OllamaAI:
@@ -19,6 +20,7 @@ class OllamaAI:
 
         self.memory = CustomConversationBufferMemory(llm=self.llm)
 
+        self.llm.bind_tools([analyze_file, fetch_api_doc, get_git_history])
         self.prompt_template = ChatPromptTemplate(
             [
                 SystemMessage(
@@ -32,7 +34,7 @@ class OllamaAI:
 
         self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
 
-    def query_ollama(self, query: str, query_result: list, project_path: str) -> str:
+    def query_ollama(self, query: str, query_result: list, project_path: str, language: str) -> str:
         """Generate a chat response using ChatOllama and store conversation."""
         self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
 
@@ -42,11 +44,19 @@ class OllamaAI:
         if not isinstance(chat_history, list):
             chat_history = []
 
+        file_analysis_result = self.llm.tools["analyze_file"](file_path=project_path)
+        api_doc_result = self.llm.tools["fetch_api_doc"](library="langchain", language=language)
+        git_history_result = self.llm.tools["get_git_history"](file_path=project_path)
+
+        tool_output_summary = (f"File Analysis: {file_analysis_result}\nAPI Documentation: {api_doc_result}\nGit "
+                               f"History: {git_history_result}")
+
         prompt_variables = {
             "query": query,
             "query_result": query_result,
             "chat_history": chat_history
         }
+
         response = self.conversation_chain.invoke(prompt_variables)
 
         if isinstance(response, AIMessage):
