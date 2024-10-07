@@ -2,7 +2,6 @@ import logging
 from hashlib import md5
 
 import chromadb
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 
 from src.ai.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
@@ -20,11 +19,10 @@ class ChromaDBManager:
             model_name="mxbai-embed-large",
             url="http://localhost:11434/api/embeddings"
         )
-        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         self.vectorstore = Chroma(client=self.persistent_client, collection_name="documents",
                                   embedding_function=self.embedding_function)
 
-    def add_files_from_project_to_db(self, project_path, language):
+    def add_files_from_project_to_db(self, project_path: str, language: str):
         """Add or update files from the project path to the database using langchain-chroma."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
@@ -44,7 +42,8 @@ class ChromaDBManager:
             else:
                 self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
 
-    def add_file_to_db_by_project_and_language(self, project_path, file_path, file_content, language):
+    def add_file_to_db_by_project_and_language(self, project_path: str, file_path: str, file_content: str,
+                                               language: str):
         """Add a single file to the ChromaDB along with its metadata."""
         self.vectorstore.add_texts(
             texts=[file_content],

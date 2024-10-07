@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # java_query_manager.process_query(java_user_query, java_project_path)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "tell me all the ways to refactor the project and which files should i refactor "
+    python_user_query = "tell me what my previous query was "
     python_query_manager = QueryManager(python_language)
     python_query_manager.process_query(python_user_query, python_project_path)
 

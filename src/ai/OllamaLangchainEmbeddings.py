@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from chromadb.utils.embedding_functions.ollama_embedding_function import OllamaEmbeddingFunction
 from langchain.embeddings.base import Embeddings
 
@@ -8,7 +10,7 @@ class OllamaLangchainEmbeddings(Embeddings):
     def __init__(self, model_name: str, url: str):
         self.ollama_embedding = OllamaEmbeddingFunction(model_name=model_name, url=url)
 
-    def embed_query(self, text: str) -> list:
+    def embed_query(self, text: str) -> Sequence[float] | Sequence[int]:
         """Generate embedding for a single query."""
         return self.ollama_embedding([text])[0]
 
