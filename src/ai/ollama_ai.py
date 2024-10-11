@@ -10,7 +10,6 @@ from langgraph.store.memory import InMemoryStore
 from src.database.sql_database_manager import DatabaseManager
 
 
-# Define the schema as a TypedDict
 class QueryState(TypedDict):
     query: str
     query_result: List[str]
@@ -32,6 +31,7 @@ class OllamaAI:
         workflow.add_node("process_query", self.process_query)
         workflow.add_edge(START, "process_query")
         workflow.add_edge("process_query", END)
+        # TODO currently the memory is still not stored correctly, check if maybe the memory store needs to be updated before
         return workflow.compile(checkpointer=self.checkpointer, store=self.memory_store)
 
     def process_query(self, state: QueryState) -> QueryState:
@@ -48,6 +48,7 @@ class OllamaAI:
             if hasattr(history_item, 'response') and isinstance(history_item.response, str):
                 messages.append(HumanMessage(content=history_item.response))
 
+        # TODO check solution
         state["query_result"] = self.llm.invoke(messages)
 
         return state
