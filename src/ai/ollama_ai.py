@@ -1,57 +1,88 @@
-from langchain.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-    HumanMessagePromptTemplate,
-)
-from langchain_core.messages import AIMessage, SystemMessage
-from langchain_core.runnables import RunnableSequence
-from langchain_ollama import ChatOllama
+import uuid
+from typing import TypedDict, List
 
-from src.ai.conversational_history import CustomConversationBufferMemory
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_ollama import ChatOllama
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import StateGraph, START, END
+from langgraph.store.memory import InMemoryStore
+
 from src.database.sql_database_manager import DatabaseManager
+
+
+# Define the schema as a TypedDict
+class QueryState(TypedDict):
+    query: str
+    query_result: List[str]
+    chat_history: List[str]
 
 
 class OllamaAI:
     def __init__(self, model_name="llama3.1", temperature=0.5):
-        """Initialize the Ollama model for chat and set up memory."""
+        """Initialize the Ollama model for chat and set up memory and graph."""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
         self.sql_db_manager = DatabaseManager()
+        self.checkpointer = MemorySaver()
+        self.memory_store = InMemoryStore()
+        self.state_graph = self.build_graph()
 
-        self.memory = CustomConversationBufferMemory(llm=self.llm)
+    def build_graph(self):
+        """Build a LangGraph workflow with state schema for query processing."""
+        workflow = StateGraph(QueryState)
+        workflow.add_node("process_query", self.process_query)
+        workflow.add_edge(START, "process_query")
+        workflow.add_edge("process_query", END)
+        return workflow.compile(checkpointer=self.checkpointer, store=self.memory_store)
 
-        self.prompt_template = ChatPromptTemplate(
-            [
-                SystemMessage(
-                    content="You are an assistant that provides help with Python or Java applications by analyzing "
-                            "project files."),
-                MessagesPlaceholder(variable_name="chat_history"),
-                SystemMessage(content="Let me analyze the following file content:  {query_result}"),
-                HumanMessagePromptTemplate.from_template("{query}"),
-            ]
-        )
+    def process_query(self, state: QueryState) -> QueryState:
+        """Node function to process the query."""
+        messages = [
+            SystemMessage(content="You are an AI assistant that helps with Python or Java code analysis."),
+            HumanMessage(content=state["query"])
+        ]
 
-        self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
+        for history_item in state["chat_history"]:
+            if hasattr(history_item, 'question') and isinstance(history_item.question, str):
+                messages.append(HumanMessage(content=history_item.question))
+
+            if hasattr(history_item, 'response') and isinstance(history_item.response, str):
+                messages.append(HumanMessage(content=history_item.response))
+
+        state["query_result"] = self.llm.invoke(messages)
+
+        return state
 
     def query_ollama(self, query: str, query_result: list, project_path: str) -> str:
-        """Generate a chat response using ChatOllama and store conversation."""
-        self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
+        """Generate a chat response using ChatOllama and store conversation in the graph."""
+        thread_id = str(uuid.uuid4())
 
-        memory_vars = self.memory.load_memory_variables({})
-        chat_history = memory_vars.get("chat_history", [])
+        chat_history = self.sql_db_manager.get_project_chat_context(project_path)
 
-        if not isinstance(chat_history, list):
-            chat_history = []
+        serializable_chat_history = []
+        for history_item in chat_history:
+            if hasattr(history_item, 'question') and isinstance(history_item.question, str):
+                serializable_chat_history.append(history_item.question)
+            if hasattr(history_item, 'response') and isinstance(history_item.response, str):
+                serializable_chat_history.append(history_item.response)
 
-        prompt_variables = {
+        input_data = {
             "query": query,
             "query_result": query_result,
-            "chat_history": chat_history
+            "chat_history": serializable_chat_history
         }
-        response = self.conversation_chain.invoke(prompt_variables)
 
+        config = {"configurable": {"thread_id": thread_id}}
+        result = self.state_graph.invoke(input_data, config=config)
+
+        response = result.get("query_result", "No response")
         if isinstance(response, AIMessage):
             response = response.content
 
-        self.memory.save_context({"input": query}, {"output": response})
+        self.sql_db_manager.connect_and_store_chat_context(query, response, project_path)
 
         return response
+
+    def handle_query(self, user_input: str, project_path: str):
+        """Main handler for user input and processing query via graph."""
+        query_result = []
+        return self.query_ollama(user_input, query_result, project_path)

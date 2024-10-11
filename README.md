@@ -27,7 +27,6 @@ queries related to the project files, and stores both queries and AI responses i
 ├── src/
 │   ├── ai/
 │   │   ├── ollama_ai.py         # Manages AI queries and responses using OllamaAI
-│   │   └── conversational_history.py # Custom conversation buffer memory to interact with AI
 │   ├── database/
 │   │   ├── chromadb_manager.py # Handles ChromaDB for file ingestion and querying
 │   │   ├── sql_database_manager.py # Manages SQLite database interactions
