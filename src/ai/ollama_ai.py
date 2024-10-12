@@ -59,7 +59,7 @@ class OllamaAI:
             if hasattr(history_item, 'response') and isinstance(history_item.response, str):
                 messages.append(HumanMessage(content=history_item.response))
 
-        state["retrieved_files"] = self.llm.invoke(messages)
+        state["query"] = self.llm.invoke(messages)
 
         return state
 
@@ -85,7 +85,7 @@ class OllamaAI:
         config = {"configurable": {"thread_id": thread_id}}
         result = self.state_graph.invoke(input_data, config=config)
 
-        response = result.get("retrieved_files", "No response")
+        response = result.get("query", "No response")
         if isinstance(response, AIMessage):
             response = response.content
 
