@@ -31,7 +31,7 @@ queries related to the project files, and stores both queries and AI responses i
 │   │   ├── chromadb_manager.py # Handles ChromaDB for file ingestion and querying
 │   │   ├── sql_database_manager.py # Manages SQLite database interactions
 │   └── service/
-│       └── query_manager.py     # Orchestrates query processing and interactions with AI and databases
+│       └── code_analyzer.py     # Orchestrates query processing and interactions with AI and databases
 ├── README.md                    # Project documentation
 └── requirements.txt             # Python dependencies
 ```

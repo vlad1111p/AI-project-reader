@@ -4,13 +4,13 @@ from src.ai.ollama_ai import OllamaAI
 from src.database.chromadb_manager import ChromaDBManager
 
 
-class QueryManager:
+class CodeAnalyzer:
     def __init__(self, language: str):
         self.chroma_db_manager = ChromaDBManager()
         self.ollama_ai = OllamaAI()
         self.language = language
 
-    def process_query(self, query: str, project_path: str):
+    def analyze(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
         self.chroma_db_manager.add_files_from_project_to_db(project_path, self.language)
         query_result = self.chroma_db_manager.query_db_by_project_path_and_language(
