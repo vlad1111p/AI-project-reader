@@ -1,94 +1,75 @@
-import uuid
-from typing import TypedDict, List
+from typing import List
 
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_ollama import ChatOllama
-from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph import StateGraph, START, END, add_messages
-from langgraph.store.memory import InMemoryStore
-from typing_extensions import Annotated
+from langgraph.constants import END
+from langgraph.graph import StateGraph, START
 
-from src.database.sql_database_manager import DatabaseManager
-
-
-class QueryState(TypedDict):
-    query: str
-    retrieved_files: List[str]
-    chat_history: List[str]
-    messages: Annotated[list, add_messages]
+from src.model.query_state import QueryState
+from src.util.tools import ToolService
 
 
 class OllamaAI:
     def __init__(self, model_name="llama3.1", temperature=0.5):
-        """Initialize the Ollama model for chat and set up memory and graph."""
+        """Initialize the Ollama model for chat and set up tools."""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
-        self.sql_db_manager = DatabaseManager()
-        self.checkpointer = MemorySaver()
-        self.memory_store = InMemoryStore()
+        self.tool_service = ToolService()
         self.state_graph = self.build_graph()
 
     def build_graph(self):
-        """Build a LangGraph workflow with state schema for query processing."""
         workflow = StateGraph(QueryState)
+
+        workflow.add_node("analyze_files", self.tool_service.analyze_files)
+        workflow.add_node("retrieve_chat_history", self.tool_service.retrieve_chat_history)
         workflow.add_node("process_query", self.process_query)
-        workflow.add_edge(START, "process_query")
+
+        workflow.add_edge(START, "analyze_files")
+        workflow.add_edge("analyze_files", "retrieve_chat_history")
+        workflow.add_edge("retrieve_chat_history", "process_query")
         workflow.add_edge("process_query", END)
 
-        # TODO currently the memory is still not stored correctly, check if maybe the memory store needs to be updated before
-        return workflow.compile(checkpointer=self.checkpointer, store=self.memory_store)
+        return workflow.compile()
 
     def process_query(self, state: QueryState) -> QueryState:
-        """Node function to process the query and analyze the query_result."""
-        messages = [
-            SystemMessage(content="You are an AI assistant that helps with Python or Java code analysis."),
-            HumanMessage(content=state["query"])
-        ]
+        """Process the query and update the response in the state."""
+        chat_history = state.get("chat_history", [])
+        retrieved_files = state.get("retrieved_files", [])
+        query = state.get("query", "")
 
-        if state["retrieved_files"]:
-            messages.append(SystemMessage(content="Here is the code/data that needs to be analyzed:"))
-            for result in state["retrieved_files"]:
-                if isinstance(result, str):
-                    messages.append(HumanMessage(content=result))
-                elif hasattr(result, 'page_content') and isinstance(result.page_content, str):
-                    messages.append(HumanMessage(content=result.page_content))
-                else:
-                    messages.append(HumanMessage(content=str(result)))
-        for history_item in state["chat_history"]:
-            if hasattr(history_item, 'question') and isinstance(history_item.question, str):
-                messages.append(HumanMessage(content=history_item.question))
-            if hasattr(history_item, 'response') and isinstance(history_item.response, str):
-                messages.append(HumanMessage(content=history_item.response))
+        messages = []
+        for entry in chat_history:
+            if isinstance(entry, str):
+                messages.append(HumanMessage(content=entry))
+            elif isinstance(entry, dict) and 'role' in entry and 'content' in entry:
+                messages.append(HumanMessage(content=entry['content']) if entry['role'] == 'human' else AIMessage(
+                    content=entry['content']))
 
-        state["query"] = self.llm.invoke(messages)
+        file_contents = [doc.page_content if isinstance(doc, Document) else doc["page_content"] for doc in
+                         retrieved_files]
+        combined_input = f"Query: {query}\nRetrieved Files:\n" + "\n".join(file_contents)
+        messages.append(HumanMessage(content=combined_input))
+
+        response_message = self.llm.invoke(messages)
+
+        state["response"] = response_message.content if response_message else "No valid response generated."
+        messages.append(AIMessage(content=state["response"]))
+        state["messages"] = messages
 
         return state
 
-    def query_ollama(self, query: str, retrieved_files: list, project_path: str) -> str:
-        """Generate a chat response using ChatOllama and store conversation in the graph."""
-        thread_id = str(uuid.uuid4())
-
-        chat_history = self.sql_db_manager.get_project_chat_context(project_path)
-
-        serializable_chat_history = []
-        for history_item in chat_history:
-            if hasattr(history_item, 'question') and isinstance(history_item.question, str):
-                serializable_chat_history.append(history_item.question)
-            if hasattr(history_item, 'response') and isinstance(history_item.response, str):
-                serializable_chat_history.append(history_item.response)
-
+    def query_ollama(self, query: str, retrieved_files: List[Document], project_path: str) -> str:
+        """Generate a chat response using ChatOllama and include tools in the process."""
         input_data = {
             "query": query,
+            "project_path": project_path,
             "retrieved_files": retrieved_files,
-            "chat_history": serializable_chat_history
+            "chat_history": [],
+            "response": ""
         }
 
-        config = {"configurable": {"thread_id": thread_id}}
-        result = self.state_graph.invoke(input_data, config=config)
+        final_state = None
+        for state in self.state_graph.stream(input_data):
+            final_state = state
 
-        response = result.get("query", "No response")
-        if isinstance(response, AIMessage):
-            response = response.content
-
-        self.sql_db_manager.connect_and_store_chat_context(query, response, project_path)
-
-        return response
+        return final_state["process_query"]["response"]

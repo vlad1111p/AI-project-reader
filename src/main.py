@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # java_query_manager.process_query(java_user_query, java_project_path)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "Suggest how the class OllamaAI could be further refactored and give a step by step explenation with example code for performace "
+    python_user_query = "say hello back"
     python_query_manager = CodeAnalyzer(python_language)
     python_query_manager.analyze(python_user_query, python_project_path)
     sql_manager = DatabaseManager()
