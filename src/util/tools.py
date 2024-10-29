@@ -40,9 +40,6 @@ class ToolService:
 
     def retrieve_chat_history(self, args) -> dict:
         """Retrieve chat history for the given project as a dictionary."""
-        # print("retrieve_chat_history")
-        # print(args)
-
         args_obj = RetrieveChatHistoryArgs(**args)
         project_path = args_obj.project_path
         chat_history = []
@@ -54,17 +51,12 @@ class ToolService:
                 if context.response:
                     chat_history.append(AIMessage(content=context.response))
 
-        print(chat_history)
         return {"chat_history": chat_history}
 
     def analyze_files(self, args) -> dict:
         """Analyze retrieved files and return a dictionary."""
-        # print("analyze_files")
-        # print(args)
-
         args_model = AnalyzeFilesArgs(**args) if isinstance(args, dict) else args
         retrieved_files = args_model.retrieved_files
-        print(retrieved_files)
 
         analyzed_results = [f"Analyzed content of {doc.page_content}" for doc in retrieved_files]
 
