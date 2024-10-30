@@ -32,12 +32,11 @@ class ChromaDBManager:
 
             if existing_docs:
                 stored_content = existing_docs[0].page_content
-                if md5(stored_content.encode()).hexdigest() == md5(content.encode()).hexdigest():
-                    logging.info(f"File '{file_path}' is unchanged.")
-                else:
+                if md5(stored_content.encode()).hexdigest() != md5(content.encode()).hexdigest():
                     logging.info(f"File '{file_path}' has been modified, updating...")
-                    self.vectorstore.delete(
-                        ids=[existing_docs[0].metadata['id']])
+                    existing_ids = [doc.metadata['id'] for doc in existing_docs]
+                    if file_path in existing_ids:
+                        self.vectorstore.delete(ids=[file_path])
                     self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
             else:
                 self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
