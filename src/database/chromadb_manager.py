@@ -22,7 +22,8 @@ class ChromaDBManager:
         self.vectorstore = Chroma(client=self.persistent_client, collection_name="documents",
                                   embedding_function=self.embedding_function)
 
-    def add_files_from_project_to_db(self, project_path: str, language: str):
+    def add_files_from_project_to_db(self,
+                                     project_path: str, language: str):
         """Add or update files from the project path to the database using langchain-chroma."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
@@ -56,13 +57,8 @@ class ChromaDBManager:
 
     def query_db_by_project_path_and_language(self, query_text: str, project_path: str, language: str):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
-        if "refactor" in query_text.lower():
-            general_refactor_query = ("Identify ways to refactor code in a project. Focus on improving structure, "
-                                      "reducing complexity, and cleaning up large functions or classes.")
-            combined_query = f"{general_refactor_query} {query_text}"
-        else:
-            combined_query = query_text
-        query_embedding = self.embedding_function.embed_query(combined_query)
+
+        query_embedding = self.embedding_function.embed_query(query_text)
 
         if query_embedding:
             filter_conditions = {
