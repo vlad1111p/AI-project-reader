@@ -7,7 +7,7 @@ from src.database.chromadb_manager import ChromaDBManager
 class CodeAnalyzer:
     def __init__(self, language: str):
         self.chroma_db_manager = ChromaDBManager()
-        self.ollama_ai = AiHandler()
+        self.ai_handler = AiHandler()
         self.language = language
 
     def analyze(self, query: str, project_path: str):
@@ -17,6 +17,6 @@ class CodeAnalyzer:
             query, project_path, self.language
         )
 
-        response = self.ollama_ai.query_model(query, query_result, project_path)
+        response = self.ai_handler.analyze_code(query, query_result, project_path)
         print("----------------------Response----------------")
         print(f"Response for Document : {response}")
