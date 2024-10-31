@@ -1,57 +1,76 @@
-from langchain.prompts import (
-    ChatPromptTemplate,
-    MessagesPlaceholder,
-    HumanMessagePromptTemplate,
-)
-from langchain_core.messages import AIMessage, SystemMessage
-from langchain_core.runnables import RunnableSequence
-from langchain_ollama import ChatOllama
+from typing import List
 
-from src.ai.conversational_history import CustomConversationBufferMemory
-from src.database.sql_database_manager import DatabaseManager
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_ollama import ChatOllama
+from langgraph.constants import END
+from langgraph.graph import StateGraph, START
+
+from src.model.query_state import QueryState
+from src.util.content_summary import update_summary
 
 
 class OllamaAI:
     def __init__(self, model_name="llama3.1", temperature=0.5):
-        """Initialize the Ollama model for chat and set up memory."""
+        """Initialize the Ollama model for chat and set up tools."""
         self.llm = ChatOllama(model=model_name, temperature=temperature)
-        self.sql_db_manager = DatabaseManager()
+        self.state_graph = self.build_graph()
 
-        self.memory = CustomConversationBufferMemory(llm=self.llm)
+    def build_graph(self):
+        workflow = StateGraph(QueryState)
 
-        self.prompt_template = ChatPromptTemplate(
-            [
-                SystemMessage(
-                    content="You are an assistant that provides help with Python or Java applications by analyzing "
-                            "project files."),
-                MessagesPlaceholder(variable_name="chat_history"),
-                SystemMessage(content="Let me analyze the following file content:  {query_result}"),
-                HumanMessagePromptTemplate.from_template("{query}"),
-            ]
-        )
+        workflow.add_node("process_query", self.process_query)
 
-        self.conversation_chain = RunnableSequence(self.prompt_template | self.llm)
+        workflow.add_edge(START, "process_query")
+        workflow.add_edge("process_query", END)
+        return workflow.compile()
 
-    def query_ollama(self, query: str, query_result: list, project_path: str) -> str:
-        """Generate a chat response using ChatOllama and store conversation."""
-        self.memory.set_db_manager_and_project(self.sql_db_manager, project_path)
+    def process_query(self, state: QueryState) -> QueryState:
+        """Process the query using chat history from summary.txt and generate a response."""
+        query = state.get("query", "")
+        retrieved_files = state.get("retrieved_files", [])
 
-        memory_vars = self.memory.load_memory_variables({})
-        chat_history = memory_vars.get("chat_history", [])
+        try:
+            with open('summary.txt', 'r') as file:
+                summary_content = file.read().strip()
+        except FileNotFoundError:
+            summary_content = "No previous conversation history available."
 
-        if not isinstance(chat_history, list):
-            chat_history = []
+        messages = [
+            HumanMessage(content="Use the following as conversation history/context:"),
+            HumanMessage(content=summary_content),
+            HumanMessage(content=f"User Query: {query}")
+        ]
 
-        prompt_variables = {
+        file_contents = [doc.page_content for doc in retrieved_files]
+        if file_contents:
+            combined_files_content = "\n".join(file_contents)
+            messages.append(HumanMessage(content=f"Retrieved Files:\n{combined_files_content}"))
+
+        response_message = self.llm.invoke(messages)
+
+        if not response_message.content.strip():
+            response_message.content = "No valid response generated."
+
+        state["response"] = response_message.content
+        messages.append(AIMessage(content=response_message.content))
+        state["messages"] = messages
+
+        return state
+
+    def query_ollama(self, query: str, retrieved_files: List[Document], project_path: str) -> str:
+        """Generate a chat response using ChatOllama with summary.txt as context."""
+        input_data = {
             "query": query,
-            "query_result": query_result,
-            "chat_history": chat_history
+            "project_path": project_path,
+            "retrieved_files": retrieved_files,
+            "chat_history": [],
+            "response": ""
         }
-        response = self.conversation_chain.invoke(prompt_variables)
 
-        if isinstance(response, AIMessage):
-            response = response.content
-
-        self.memory.save_context({"input": query}, {"output": response})
-
+        final_state = None
+        for state in self.state_graph.stream(input_data):
+            final_state = state
+        response = final_state["process_query"]["response"]
+        update_summary(query, response)
         return response
