@@ -1,81 +1,26 @@
 from typing import List
 
+from langchain_community.chat_models import ChatOpenAI
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, HumanMessage
 from langchain_ollama import ChatOllama
-from langgraph.constants import END
-from langgraph.graph import StateGraph, START
 
-from src.domain.query_state import QueryState
-from src.util.content_summary import update_summary
+from src.ai.ai_code_analyzer.ai_analyzer import AiAnalyze
+
+
+def create_llm(model_name, model_type, temperature):
+    if model_type == "llama":
+        return ChatOllama(model=model_name, temperature=temperature)
+    elif model_type == "chatgpt":
+        return ChatOpenAI(model=model_name, temperature=temperature)
+    else:
+        raise ValueError(f"Unsupported model type: {model_type}")
 
 
 class AiHandler:
-    def __init__(self, model_name="llama3.1", temperature=0.5):
-        """Initialize the Ollama domain for chat and set up tools."""
-        self.llm = ChatOllama(model=model_name, temperature=temperature)
-        self.state_graph = self.build_graph()
+    def __init__(self, model_name="llama3.1", model_type="llama", temperature=0.5):
+        """Initialize the appropriate LLM for chat."""
+        self.llm = create_llm(model_name, model_type, temperature)
+        self.code_analyzer = AiAnalyze(self.llm)
 
-    def build_graph(self):
-        workflow = StateGraph(QueryState)
-
-        workflow.add_node("process_query", self.process_query)
-
-        workflow.add_edge(START, "process_query")
-        workflow.add_edge("process_query", END)
-        return workflow.compile()
-
-    def process_query(self, state: QueryState) -> QueryState:
-        """Process the query using chat history from summary.txt and generate a response."""
-        query = state.get("query", "")
-        retrieved_files = state.get("retrieved_files", [])
-
-        try:
-            with open('summary.txt', 'r') as file:
-                summary_content = file.read().strip()
-        except FileNotFoundError:
-            summary_content = "No previous conversation history available."
-
-        messages = [
-            HumanMessage(content="Use the following as conversation history/context:"),
-            HumanMessage(content=summary_content),
-            HumanMessage(content=f"User Query: {query}")
-        ]
-
-        file_contents = [doc.page_content for doc in retrieved_files]
-        retrieved_files_message = None
-        if file_contents:
-            combined_files_content = "\n".join(file_contents)
-            retrieved_files_message = HumanMessage(content=f"Retrieved Files:\n{combined_files_content}")
-            messages.append(retrieved_files_message)
-
-        response_message = self.llm.invoke(messages)
-
-        if not response_message.content.strip():
-            response_message.content = "No valid response generated."
-
-        state["response"] = response_message.content
-        messages.append(AIMessage(content=response_message.content))
-        state["messages"] = messages
-
-        if retrieved_files_message in messages:
-            messages.remove(retrieved_files_message)
-
-        return state
-
-    def query_model(self, query: str, retrieved_files: List[Document], project_path: str) -> str:
-        """Generate a chat response using ChatOllama with summary.txt as context."""
-        input_data = {
-            "query": query,
-            "project_path": project_path,
-            "retrieved_files": retrieved_files,
-            "chat_history": [],
-            "response": ""
-        }
-
-        final_state = None
-        for state in self.state_graph.stream(input_data):
-            final_state = state
-        response = final_state["process_query"]["response"]
-        update_summary(query, response)
-        return response
+    def analyze_code(self, query: str, retrieved_files: List[Document], project_path: str):
+        return self.code_analyzer.query_model(query, retrieved_files, project_path)

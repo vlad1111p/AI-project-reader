@@ -4,7 +4,7 @@ from hashlib import md5
 import chromadb
 from langchain.vectorstores import Chroma
 
-from src.ai.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
+from src.ai.embeddings.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
 from src.util.file_reader import FileReader
 
 
