@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Text, Integer, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from src.service.utils import hash_project_path
+from src.util.utils import hash_project_path
 
 Base = declarative_base()
 
@@ -23,15 +23,9 @@ class DatabaseManager:
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
 
-    def connect_and_store_chat_context(self, question: str, response: str, project_path: str):
-        """Create table and store chat context in the database."""
-        self.create_table()
-        self.store_chat_context(
-            question, response, hash_project_path(project_path)
-        )
-
     def store_chat_context(self, question: str, response: str, project_path: str):
         """Store chat context in the chat_context table."""
+        self.create_table()
         chat_context = ChatContext(
             question=question,
             response=response,

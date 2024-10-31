@@ -5,10 +5,6 @@ from langchain_core.tools import StructuredTool
 from pydantic import BaseModel
 
 
-class RetrieveChatHistoryArgs(BaseModel):
-    project_path: str
-
-
 class AnalyzeFilesArgs(BaseModel):
     retrieved_files: List[Document]
 

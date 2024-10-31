@@ -26,7 +26,7 @@ queries related to the project files, and stores both queries and AI responses i
 ```bash
 ├── src/
 │   ├── ai/
-│   │   ├── ollama_ai.py         # Manages AI queries and responses using OllamaAI
+│   │   ├── ai_handler.py         # Manages AI queries and responses using OllamaAI
 │   ├── database/
 │   │   ├── chromadb_manager.py # Handles ChromaDB for file ingestion and querying
 │   │   ├── sql_database_manager.py # Manages SQLite database interactions
