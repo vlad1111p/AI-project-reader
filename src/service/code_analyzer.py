@@ -13,7 +13,7 @@ class CodeAnalyzer:
     def analyze(self, query: str, project_path: str):
         logging.info("Querying ChromaDB for relevant embeddings...")
         self.chroma_db_manager.add_files_from_project_to_db(project_path, self.language)
-        query_result = self.chroma_db_manager.query_db_by_project_path_and_language(
+        query_result = self.chroma_db_manager.query_db(
             query, project_path, self.language
         )
 

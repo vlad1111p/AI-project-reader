@@ -22,8 +22,7 @@ class ChromaDBManager:
         self.vectorstore = Chroma(client=self.persistent_client, collection_name="documents",
                                   embedding_function=self.embedding_function)
 
-    def add_files_from_project_to_db(self,
-                                     project_path: str, language: str):
+    def add_files_from_project_to_db(self, project_path: str, language: str):
         """Add or update files from the project path to the database using langchain-chroma."""
         reader = FileReader(project_path, language)
         files_contents = reader.read_all_files()
@@ -38,12 +37,11 @@ class ChromaDBManager:
                     existing_ids = [doc.metadata['id'] for doc in existing_docs]
                     if file_path in existing_ids:
                         self.vectorstore.delete(ids=[file_path])
-                    self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
+                    self.add_by_project_and_language(project_path, file_path, content, language)
             else:
-                self.add_file_to_db_by_project_and_language(project_path, file_path, content, language)
+                self.add_by_project_and_language(project_path, file_path, content, language)
 
-    def add_file_to_db_by_project_and_language(self, project_path: str, file_path: str, file_content: str,
-                                               language: str):
+    def add_by_project_and_language(self, project_path: str, file_path: str, file_content: str, language: str):
         """Add a single file to the ChromaDB along with its metadata."""
         self.vectorstore.add_texts(
             texts=[file_content],
@@ -55,9 +53,8 @@ class ChromaDBManager:
         )
         logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
 
-    def query_db_by_project_path_and_language(self, query_text: str, project_path: str, language: str):
+    def query_db(self, query_text: str, project_path: str, language: str):
         """Query the ChromaDB with text and retrieve similar documents filtered by project path and language."""
-
         query_embedding = self.embedding_function.embed_query(query_text)
 
         if query_embedding:
