@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.constants import START, END
 from langgraph.graph import StateGraph
 
+from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, user_query_prompt, history_prompt
 from src.domain.query_state import QueryState
 from src.util.content_summary import update_summary
 
@@ -34,9 +35,9 @@ class AiAnalyze:
         except FileNotFoundError:
             summary_content = "No previous conversation history available."
 
-        history_message = HumanMessage(content="Use the following as conversation history/context:")
+        history_message = HumanMessage(content=history_prompt(summary_content))
         summary_message = HumanMessage(content=summary_content)
-        user_query_message = HumanMessage(content=f"User Query: {query}")
+        user_query_message = HumanMessage(content=user_query_prompt(query))
 
         messages = [history_message, summary_message, user_query_message]
         state["messages"].extend(messages)
@@ -45,7 +46,7 @@ class AiAnalyze:
         retrieved_files_message = None
         if file_contents:
             combined_files_content = "\n".join(file_contents)
-            retrieved_files_message = HumanMessage(content=f"Retrieved Files:\n{combined_files_content}")
+            retrieved_files_message = HumanMessage(content=supporting_code_prompt(combined_files_content))
             messages.append(retrieved_files_message)
 
         response_message = self.llm.invoke(messages)
@@ -71,7 +72,6 @@ class AiAnalyze:
             "query": query,
             "project_path": project_path,
             "retrieved_files": retrieved_files,
-            "chat_history": [],
             "response": ""
         }
 

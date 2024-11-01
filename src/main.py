@@ -16,6 +16,6 @@ if __name__ == "__main__":
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
     # python_user_query = "what was my previous message."
-    python_user_query = "tell me how to improve the code and also explain what you did "
+    python_user_query = "Refactor me the ai_analyzer.py"
     python_query_manager = CodeAnalyzer(python_language)
     python_query_manager.analyze(python_user_query, python_project_path)

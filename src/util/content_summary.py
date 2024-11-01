@@ -24,7 +24,8 @@ def summarize_conversation(content: str) -> str:
     summary_prompt = (f"Here is the summary so far:\n "
                       f"{content} "
                       f"\n Please condense the summary to be more concise."
-                      f"The content must have up to {acceptable_size / 2} letters")
+                      f"The content must have up to {acceptable_size / 2} letters"
+                      f"Do not add the code to the summary")
 
     messages = [HumanMessage(content=summary_prompt)]
     summary_response = ChatOllama(model="llama3.1").invoke(messages)
