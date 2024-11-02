@@ -23,7 +23,7 @@ def summarize_conversation(previous_entry: str, new_entry: str) -> str:
     acceptable_size = 10000
     if len(previous_entry) + len(new_entry) > acceptable_size:
         messages = [HumanMessage(content=summary_prompt(previous_entry, new_entry, acceptable_size))]
-        summary_response = ChatOllama(model="llama3.1").invoke(messages)
+        summary_response = ChatOllama(model="llama3.2").invoke(messages)
         return summary_response.content
     else:
         return previous_entry + new_entry
