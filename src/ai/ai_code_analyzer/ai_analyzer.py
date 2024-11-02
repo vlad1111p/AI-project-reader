@@ -2,7 +2,7 @@ import sqlite3
 from typing import List
 
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import StateGraph
 
@@ -35,14 +35,12 @@ class AiAnalyze:
         retrieved_files = state.get("retrieved_files", [])
 
         messages = state.get("messages", [])
-        messages.append(HumanMessage(content=query_prompt(query)))
 
-        file_contents = [doc.page_content for doc in retrieved_files]
-        retrieved_files_message = None
-        if file_contents:
-            combined_files_content = "\n".join(file_contents)
-            retrieved_files_message = HumanMessage(content=supporting_code_prompt(combined_files_content))
+        for doc in retrieved_files:
+            retrieved_files_message = SystemMessage(content=supporting_code_prompt(doc.page_content))
             messages.append(retrieved_files_message)
+            
+        messages.append(HumanMessage(content=query_prompt(query)))
 
         response_message = self.llm.invoke(messages)
 
@@ -52,9 +50,6 @@ class AiAnalyze:
         state["response"] = response_message.content
         messages.append(AIMessage(content=response_message.content))
         state["messages"] = messages
-
-        if retrieved_files_message in messages:
-            messages.remove(retrieved_files_message)
 
         return state
 

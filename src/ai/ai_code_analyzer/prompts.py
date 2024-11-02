@@ -1,12 +1,14 @@
 def query_prompt(query: str) -> str:
     return (
-        f"[NEW QUERY]\nUser Query:\n{query}\n"
+        f"[NEW QUERY] User Query:"
+        f"{query}"
         "Please prioritize the new query while using the context if relevant.")
 
 
 def supporting_code_prompt(combined_files_content: str) -> str:
     return (
-        f"Reference Files (for context only):\n{combined_files_content}\n"
+        f"Reference File (for context only):"
+        f"{combined_files_content}"
         f"Please focus on the user query above. Use the code details only to clarify or support "
         f"the main response as needed."
     )
