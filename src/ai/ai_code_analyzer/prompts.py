@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
 def query_prompt(query: str) -> str:
@@ -38,14 +38,27 @@ def system_prompt() -> ChatPromptTemplate:
         "{context}"
     )
 
-    human_prompt = (
-        "User Query:"
-        "{query}"
-        "Please prioritize the user query while using the context if relevant.")
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", prompt),
+            ("human", "{input}"),
+        ]
+    )
+
+
+def contextualize_q_prompt():
+    prompt = (
+        "Given a chat history and the latest user question "
+        "which might reference context in the chat history, "
+        "formulate a standalone question which can be understood "
+        "without the chat history. Do NOT answer the question, "
+        "just reformulate it if needed and otherwise return it as is."
+    )
 
     return ChatPromptTemplate.from_messages(
         [
             ("system", prompt),
-            ("human", human_prompt),
+            MessagesPlaceholder("chat_history"),
+            ("human", "{input}"),
         ]
     )

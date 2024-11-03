@@ -1,10 +1,5 @@
-from typing import List
-
 from langchain_community.chat_models import ChatOpenAI
-from langchain_core.documents import Document
 from langchain_ollama import ChatOllama
-
-from src.ai.ai_code_analyzer.ai_analyzer import AiAnalyze
 
 
 def create_llm(model_name, model_type, temperature):
@@ -20,7 +15,3 @@ class AiHandler:
     def __init__(self, model_name="llama3.2", model_type="llama", temperature=0.2):
         """Initialize the appropriate LLM for chat."""
         self.llm = create_llm(model_name, model_type, temperature)
-        self.code_analyzer = AiAnalyze(self.llm)
-
-    def analyze_code(self, query: str, retrieved_files: List[Document], project_path: str):
-        return self.code_analyzer.query_model(query, retrieved_files, project_path)
