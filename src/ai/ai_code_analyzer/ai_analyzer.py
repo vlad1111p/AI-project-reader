@@ -1,11 +1,12 @@
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, system_prompt
+from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, system_prompt, contextualize_q_prompt
 from src.database.chromadb_manager import ChromaDBManager
 from src.domain.query_state import QueryState
 
@@ -19,11 +20,10 @@ class AiProjectAnalyzer:
         self.question_answer_chain = create_stuff_documents_chain(self.llm, system_prompt())
         self.retriever = self.chroma_db.vectorstore.as_retriever(
             search_kwargs={'filter': {'project_path': project_path}})
-        self.rag_chain = create_retrieval_chain(self.retriever, self.question_answer_chain)
-        # self.history_aware_retriever = create_history_aware_retriever(
-        #     self.llm, self.retriever, contextualize_q_prompt()
-        # )
-        # self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
+        self.history_aware_retriever = create_history_aware_retriever(
+            self.llm, self.retriever, contextualize_q_prompt()
+        )
+        self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
 
     def build_graph(self) -> CompiledStateGraph:
         workflow = StateGraph(QueryState)
