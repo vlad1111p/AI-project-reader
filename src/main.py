@@ -8,14 +8,14 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
-    # java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    # java_user_query = "how can I further improve the code?"
-    # java_language = "java"
-    # java_query_manager = QueryManager(java_language)
-    # java_query_manager.process_query(java_user_query, java_project_path)
-    python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
-    python_language = "python"
-    python_user_query = "show me our conversation history"
-    # python_user_query = "Refactor me the ai_analyzer.py"
-    python_query_manager = CodeAnalyzer(python_language)
-    python_query_manager.analyze(python_user_query, python_project_path)
+    java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
+    java_user_query = "refactor me premereleague class"
+    java_language = "java"
+    java_query_manager = CodeAnalyzer(java_language)
+    java_query_manager.analyze(java_user_query, java_project_path)
+    # python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
+    # python_language = "python"
+    # python_user_query = "what is my name"
+    # # python_user_query = "Refactor me the ai_analyzer.py"
+    # python_query_manager = CodeAnalyzer(python_language)
+    # python_query_manager.analyze(python_user_query, python_project_path)

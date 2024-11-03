@@ -1,5 +1,5 @@
 import sqlite3
-from typing import List, Literal
+from typing import List
 
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -24,32 +24,33 @@ class AiAnalyze:
     def build_graph(self):
         workflow = StateGraph(QueryState)
 
-        workflow.add_node("rewrite", self.rewrite_question)
+        workflow.add_node("filter_documents", self.filter_documents)
+        # workflow.add_node("rewrite", self.rewrite_question)
         workflow.add_node("process_query", self.process_query)
 
-        workflow.set_entry_point("rewrite")
-        workflow.add_edge("rewrite", "process_query")
+        workflow.set_entry_point("filter_documents")
+        workflow.add_edge("filter_documents", "process_query")
         workflow.set_finish_point("process_query")
 
         return workflow.compile(checkpointer=self.checkpointer)
 
-    def rewrite_question(self, state: QueryState):
-        """Transform the query to produce a better question."""
-        question = state["query"]
-
-        msg = [HumanMessage(content=f""" 
-        Look at the input and try to reason about the underlying semantic intent / meaning. 
-        Here is the initial question:
-        ------- 
-        {question} 
-        ------- 
-        Formulate an improved question: """)]
-
-        response_message = self.llm.invoke(msg)
-        improved_question = response_message.content.strip()
-
-        state["query"] = improved_question
-        return state
+    # def rewrite_question(self, state: QueryState):
+    #     """Transform the query to produce a better question."""
+    #     question = state["query"]
+    #
+    #     msg = [HumanMessage(content=f"""
+    #     Look at the input and try to reason about the underlying semantic intent / meaning.
+    #     Here is the initial question:
+    #     -------
+    #     {question}
+    #     -------
+    #     Formulate an improved question: """)]
+    #
+    #     response_message = self.llm.invoke(msg)
+    #     improved_question = response_message.content.strip()
+    #
+    #     state["query"] = improved_question
+    #     return state
 
     def process_query(self, state: QueryState) -> QueryState:
         """Process the query using chat history from summary.txt and generate a response."""
@@ -57,6 +58,7 @@ class AiAnalyze:
 
         query = state.get("query", "")
         messages = state.get("messages", [])
+        project_path = state.get("project_path", "")
 
         for doc in retrieved_files:
             retrieved_files_message = SystemMessage(content=supporting_code_prompt(doc.page_content))
@@ -64,7 +66,9 @@ class AiAnalyze:
 
         messages.append(HumanMessage(content=query))
 
-        response_message = self.llm.invoke(messages)
+        thread = {"configurable": {"thread_id": project_path}}
+
+        response_message = self.llm.invoke(messages, thread)
 
         if not response_message.content.strip():
             response_message.content = "No valid response generated."
@@ -93,41 +97,34 @@ class AiAnalyze:
 
         return response
 
-    def grade_documents(self, state: QueryState) -> Literal["generate", "rewrite"]:
+    def filter_documents(self, state: QueryState) -> QueryState:
+        """ Filters documents in the QueryState to retain only those relevant to the user's query."""
         llm_with_tool = self.llm.with_structured_output(Grade)
 
         prompt = PromptTemplate(
-            template="""You are a grader assessing relevance of a retrieved document to a user question. \n 
-                Here is the retrieved document: \n\n {context} \n\n
-                Here is the user question: {question} \n
-                If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. \n
-                Give a binary score 'yes' or 'no' score to indicate whether the document is relevant to the question.""",
+            template="""You are a grader assessing relevance of a retrieved document to a user question. 
+            Here is the retrieved document: 
+            -------
+            {context} 
+            -------
+            Here is the user question: {question} 
+            If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. 
+            Provide a binary score 'yes' or 'no' to indicate whether the document is relevant to the question.""",
             input_variables=["context", "question"],
         )
 
         chain = prompt | llm_with_tool
 
         retrieved_files = state.get("retrieved_files", [])
-
         question = state["query"]
-        docs = "\n\n".join(
-            doc.page_content for doc in retrieved_files) if retrieved_files else "No relevant documents found."
+        relevant_docs = []
 
-        scored_result = chain.invoke({"question": question, "context": docs})
+        for doc in retrieved_files:
+            scored_result = chain.invoke({"question": question, "context": doc.page_content})
 
-        if scored_result.binary_score == "yes":
-            return "generate"
-        else:
-            return "rewrite"
+            if scored_result.binary_score == "yes":
+                relevant_docs.append(doc)
 
-    # def agent(self, state: QueryState,retriever):
-    #     """
-    #     Invokes the agent model to generate a response based on the current state. Given
-    #     the question, it will decide to retrieve using the retriever tool, or simply end.
-    #     """
-    #     print("---CALL AGENT---")
-    #     messages = state["messages"]
-    #     model = self.bind_tools(tools)
-    #     response = model.invoke(messages)
-    #     create_retriever_tool(retriever=retriever,)
-    #     return {"messages": [response]}
+        state["retrieved_files"] = relevant_docs
+
+        return state
