@@ -1,19 +1,13 @@
-from src.ai.ai_handler import AiHandler
-from src.database.chromadb_manager import ChromaDBManager
+from src.ai.ai_code_analyzer.ai_analyzer import AiProjectAnalyzer
 
 
-class CodeAnalyzer:
-    def __init__(self, language: str):
-        self.chroma_db_manager = ChromaDBManager()
-        self.ai_handler = AiHandler()
-        self.language = language
+def analyze(query: str, project_path: str, language: str):
+    """This function processes a given user query, using the project path and programming language
+    as additional context. It leverages an AI model to analyze the query in the specified project scope
+    and returns a structured response based on relevant documents and context."""
 
-    def analyze(self, query: str, project_path: str):
-        """Analyze the user query and retrieve relevant embeddings from ChromaDB."""
-        self.chroma_db_manager.add_files_from_project_to_db(project_path, self.language)
-        query_result = self.chroma_db_manager.query_db(
-            query, project_path, self.language
-        )
-        response = self.ai_handler.analyze_code(query, query_result, project_path)
-        print("----------------------Response----------------")
-        print(f"Response for Document : {response}")
+    project_analyzer = AiProjectAnalyzer(project_path)
+
+    response = project_analyzer.query_model(query, project_path, language)
+    print("----------------------Response----------------")
+    print(f"Response for Document : {response}")

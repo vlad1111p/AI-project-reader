@@ -1,6 +1,6 @@
 import logging
 
-from src.service.code_analyzer import CodeAnalyzer
+from src.service.code_analyzer import analyze
 
 logging.basicConfig(
     level=logging.INFO,
@@ -9,10 +9,10 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    java_user_query = "refactor me premereleague class"
+    java_user_query = "Refactor me Premierleague class"
     java_language = "java"
-    java_query_manager = CodeAnalyzer(java_language)
-    java_query_manager.analyze(java_user_query, java_project_path)
+
+    analyze(java_user_query, java_project_path, java_language)
     # python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     # python_language = "python"
     # python_user_query = "what is my name"

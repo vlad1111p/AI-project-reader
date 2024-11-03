@@ -30,3 +30,21 @@ def create_tools():
     )
 
     return [analyze_files_tool]
+
+    # def rewrite_question(self, state: QueryState):
+    #     """Transform the query to produce a better question."""
+    #     question = state["query"]
+    #
+    #     msg = [HumanMessage(content=f"""
+    #     Look at the input and try to reason about the underlying semantic intent / meaning.
+    #     Here is the initial question:
+    #     -------
+    #     {question}
+    #     -------
+    #     Formulate an improved question: """)]
+    #
+    #     response_message = self.llm.invoke(msg)
+    #     improved_question = response_message.content.strip()
+    #
+    #     state["query"] = improved_question
+    #     return state
