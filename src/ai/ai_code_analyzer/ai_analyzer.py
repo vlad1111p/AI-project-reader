@@ -1,7 +1,6 @@
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.prompts import PromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -9,7 +8,6 @@ from langgraph.graph.state import CompiledStateGraph
 from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, system_prompt
 from src.database.chromadb_manager import ChromaDBManager
 from src.domain.query_state import QueryState
-from src.service.grade import Grade
 
 
 class AiProjectAnalyzer:
@@ -30,11 +28,9 @@ class AiProjectAnalyzer:
     def build_graph(self) -> CompiledStateGraph:
         workflow = StateGraph(QueryState)
 
-        workflow.add_node("filter_documents", self.filter_documents)
         workflow.add_node("process_query", self.process_query)
 
-        workflow.set_entry_point("filter_documents")
-        workflow.add_edge("filter_documents", "process_query")
+        workflow.set_entry_point("process_query")
         workflow.set_finish_point("process_query")
         memory = MemorySaver()
 
@@ -82,35 +78,3 @@ class AiProjectAnalyzer:
         response = final_state["process_query"]["response"]
 
         return response
-
-    def filter_documents(self, state: QueryState) -> QueryState:
-        """ Filters documents in the QueryState to retain only those relevant to the user's query."""
-        llm_with_tool = self.llm.with_structured_output(Grade)
-
-        prompt = PromptTemplate(
-            template="""You are a grader assessing relevance of a retrieved document to a user question. 
-            Here is the retrieved document: 
-            -------
-            {context} 
-            -------
-            Here is the user question: {question} 
-            If the document contains keyword(s) or semantic meaning related to the user question, grade it as relevant. 
-            Provide a binary score 'yes' or 'no' to indicate whether the document is relevant to the question.""",
-            input_variables=["context", "question"],
-        )
-
-        chain = prompt | llm_with_tool
-
-        retrieved_files = state.get("retrieved_files", [])
-        question = state["query"]
-        relevant_docs = []
-
-        for doc in retrieved_files:
-            scored_result = chain.invoke({"question": question, "context": doc.page_content})
-
-            if scored_result.binary_score == "yes":
-                relevant_docs.append(doc)
-
-        state["retrieved_files"] = relevant_docs
-
-        return state
