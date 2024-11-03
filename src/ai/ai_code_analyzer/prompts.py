@@ -1,3 +1,6 @@
+from langchain_core.prompts import ChatPromptTemplate
+
+
 def query_prompt(query: str) -> str:
     return (
         f"[NEW QUERY] User Query:"
@@ -22,4 +25,27 @@ def summary_prompt(previous_entry: str, new_entry: str, acceptable_size: int):
         f"\n Please condense the summary to be more concise."
         f"The content must have up to {acceptable_size} letters"
         f"Do not add the code to the summary"
+    )
+
+
+def system_prompt() -> ChatPromptTemplate:
+    prompt = (
+        "You are an assistant for question-answering tasks. "
+        "Use the following pieces of retrieved context to answer "
+        "the question. If you don't know the answer, say that you "
+        "don't know."
+        "\n\n"
+        "{context}"
+    )
+
+    human_prompt = (
+        "User Query:"
+        "{query}"
+        "Please prioritize the user query while using the context if relevant.")
+
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", prompt),
+            ("human", human_prompt),
+        ]
     )

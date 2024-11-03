@@ -1,31 +1,45 @@
 import sqlite3
 from typing import List
 
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.history_aware_retriever import create_history_aware_retriever
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import PromptTemplate
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import StateGraph
 
-from src.ai.ai_code_analyzer.prompts import supporting_code_prompt
+from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, system_prompt
+from src.database.chromadb_manager import ChromaDBManager
 from src.domain.query_state import QueryState
 from src.service.grade import Grade
+
+
+def setup_checkpointer():
+    conn_string = "checkpoints.sqlite"
+    connection = sqlite3.connect(conn_string, check_same_thread=False)
+    return SqliteSaver(connection)
 
 
 class AiAnalyze:
 
     def __init__(self, llm):
         self.llm = llm
-        self.conn_string = "checkpoints.sqlite"
-        self.connection = sqlite3.connect(self.conn_string, check_same_thread=False)
-        self.checkpointer = SqliteSaver(self.connection)
+        self.checkpointer = setup_checkpointer()
         self.state_graph = self.build_graph()
+        self.chroma_db = ChromaDBManager()
+        self.question_answer_chain = create_stuff_documents_chain(self.llm, system_prompt())
+        self.retriever = self.chroma_db.vectorstore.as_retriever()
+        self.rag_chain = create_retrieval_chain(self.retriever, self.question_answer_chain)
+        self.history_aware_retriever = create_history_aware_retriever(
+            llm, self.retriever, contextualize_q_prompt
+        )
 
     def build_graph(self):
         workflow = StateGraph(QueryState)
 
         workflow.add_node("filter_documents", self.filter_documents)
-        # workflow.add_node("rewrite", self.rewrite_question)
         workflow.add_node("process_query", self.process_query)
 
         workflow.set_entry_point("filter_documents")
@@ -33,24 +47,6 @@ class AiAnalyze:
         workflow.set_finish_point("process_query")
 
         return workflow.compile(checkpointer=self.checkpointer)
-
-    # def rewrite_question(self, state: QueryState):
-    #     """Transform the query to produce a better question."""
-    #     question = state["query"]
-    #
-    #     msg = [HumanMessage(content=f"""
-    #     Look at the input and try to reason about the underlying semantic intent / meaning.
-    #     Here is the initial question:
-    #     -------
-    #     {question}
-    #     -------
-    #     Formulate an improved question: """)]
-    #
-    #     response_message = self.llm.invoke(msg)
-    #     improved_question = response_message.content.strip()
-    #
-    #     state["query"] = improved_question
-    #     return state
 
     def process_query(self, state: QueryState) -> QueryState:
         """Process the query using chat history from summary.txt and generate a response."""

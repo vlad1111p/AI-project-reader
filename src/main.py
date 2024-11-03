@@ -9,7 +9,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    java_user_query = "refactor me premereleague class"
+    java_user_query = "what is my name"
     java_language = "java"
     java_query_manager = CodeAnalyzer(java_language)
     java_query_manager.analyze(java_user_query, java_project_path)
