@@ -1,9 +1,7 @@
-from langchain_core.messages import SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from src.ai.ai_code_analyzer.prompts import supporting_code_prompt
 from src.ai.ai_handler import AiHandler
 from src.domain.query_state import QueryState
 
@@ -27,15 +25,8 @@ class AiProjectAnalyzer:
 
     def process_query(self, state: QueryState) -> QueryState:
         """Process the query using chat history from summary.txt and generate a response."""
-        retrieved_files = state.get("retrieved_files", [])
-
         query = state.get("query", "")
-        messages = state.get("messages", [])
         project_path = state.get("project_path", "")
-
-        for doc in retrieved_files:
-            retrieved_files_message = SystemMessage(content=supporting_code_prompt(doc.page_content))
-            messages.append(retrieved_files_message)
 
         llm_input = {
             "input": query,
