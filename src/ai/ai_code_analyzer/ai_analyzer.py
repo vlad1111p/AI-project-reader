@@ -1,29 +1,18 @@
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
-from langchain.chains.retrieval import create_retrieval_chain
 from langchain_core.messages import SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
-from src.ai.ai_code_analyzer.prompts import supporting_code_prompt, system_prompt, contextualize_q_prompt
-from src.database.chromadb_manager import ChromaDBManager
+from src.ai.ai_code_analyzer.prompts import supporting_code_prompt
+from src.ai.ai_handler import AiHandler
 from src.domain.query_state import QueryState
 
 
 class AiProjectAnalyzer:
 
-    def __init__(self, llm, project_path: str):
-        self.llm = llm
+    def __init__(self, project_path: str):
         self.state_graph = self.build_graph()
-        self.chroma_db = ChromaDBManager()
-        self.question_answer_chain = create_stuff_documents_chain(self.llm, system_prompt())
-        self.retriever = self.chroma_db.vectorstore.as_retriever(
-            search_kwargs={'filter': {'project_path': project_path}})
-        self.history_aware_retriever = create_history_aware_retriever(
-            self.llm, self.retriever, contextualize_q_prompt()
-        )
-        self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
+        self.ai_handler = AiHandler(project_path=project_path)
 
     def build_graph(self) -> CompiledStateGraph:
         workflow = StateGraph(QueryState)
@@ -53,7 +42,7 @@ class AiProjectAnalyzer:
             "configurable": {"thread_id": project_path}
         }
 
-        response = self.rag_chain.invoke(llm_input)
+        response = self.ai_handler.rag_chain.invoke(llm_input)
         state["response"] = response["answer"]
 
         return state
@@ -66,7 +55,7 @@ class AiProjectAnalyzer:
             "response": ""
         }
 
-        self.chroma_db.add_files_from_project_to_db(project_path, language)
+        self.ai_handler.chroma_db.add_files_from_project_to_db(project_path, language)
 
         final_state = None
         thread = {"configurable": {"thread_id": project_path}}
