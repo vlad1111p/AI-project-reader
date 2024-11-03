@@ -3,7 +3,9 @@ from src.ai.ai_handler import AiHandler
 
 
 def analyze(query: str, project_path: str, language: str):
-    """Analyze the user query and retrieve relevant embeddings from ChromaDB."""
+    """This function processes a given user query, using the project path and programming language
+    as additional context. It leverages an AI model to analyze the query in the specified project scope
+    and returns a structured response based on relevant documents and context."""
 
     llm = AiHandler().llm
     project_analyzer = AiProjectAnalyzer(llm, project_path)

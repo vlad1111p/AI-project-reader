@@ -1,7 +1,7 @@
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -47,8 +47,6 @@ class AiProjectAnalyzer:
         for doc in retrieved_files:
             retrieved_files_message = SystemMessage(content=supporting_code_prompt(doc.page_content))
             messages.append(retrieved_files_message)
-
-        messages.append(HumanMessage(content=query))
 
         llm_input = {
             "input": query,

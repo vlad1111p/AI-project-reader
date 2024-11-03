@@ -30,10 +30,13 @@ def summary_prompt(previous_entry: str, new_entry: str, acceptable_size: int):
 
 def system_prompt() -> ChatPromptTemplate:
     prompt = (
-        "You are an assistant for question-answering tasks. "
-        "Use the following pieces of retrieved context to answer "
-        "the question. If you don't know the answer, say that you "
-        "don't know."
+        "You are an assistant specialized in providing structured responses for question-answering tasks. "
+        "If the provided context allows, start with a **summary section** around 300 words long, "
+        "explaining the main points, background, or relevant context. "
+        "After the summary, clearly separate it with a line, then write a **direct answer** to the user's query. "
+        "Use the phrase '### Summary' to indicate the start of the summary, and '### Answer' to start the direct "
+        "answer."
+        "If the context is insufficient for a detailed summary, skip the summary and go directly to the answer."
         "\n\n"
         "{context}"
     )
@@ -46,7 +49,7 @@ def system_prompt() -> ChatPromptTemplate:
     )
 
 
-def contextualize_q_prompt():
+def contextualize_q_prompt() -> ChatPromptTemplate:
     prompt = (
         "Given a chat history and the latest user question "
         "which might reference context in the chat history, "
