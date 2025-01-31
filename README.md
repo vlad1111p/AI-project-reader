@@ -38,15 +38,14 @@ AI Project Reader is a tool designed to analyze code projects using AI models. I
    pip install -r requirements.txt
    ```
 
-### Usage
+## Usage
 
-To analyze a project, run the following command:
+To run the AI Project Reader, execute the main script with the following parameters:
 
-```bash
-python src/service/code_analyzer.py
-```
-
-Modify the script to specify the project path, language, and query.
+- `project_path`: The path to the project directory.
+- `language`: The programming language of the project (`python` or `java`).
+- `model_type`: The type of model to use (`chatgpt` or `llama`).
+- `model_name`: The specific model name (`gpt-4o` for ChatGPT or `llama3.2` for LLaMA).
 
 ## Contributing
 
