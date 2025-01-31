@@ -1,25 +1,25 @@
 from hashlib import md5
 
 import chromadb
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
+from src.ai.embeddings.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
 from src.util.file_reader import FileReader
 
 
 class ChromaDBManager:
     def __init__(self):
-        """Initialize ChromaDB with local mxbai-embed-large embeddings."""
-        self.persistent_client = chromadb.PersistentClient(path="../local_chromadb")
+        """Initialize ChromaDB with Ollama embedding functions through a LangChain wrapper."""
+
+        self.persistent_client = chromadb.PersistentClient(path="../ollama")
         self.persistent_client.get_or_create_collection("documents")
 
-        self.embedding_model = HuggingFaceEmbeddings(model_name="mixedbread-ai/mxbai-embed-large-v1")
-
-        self.vectorstore = Chroma(
-            client=self.persistent_client,
-            collection_name="documents",
-            embedding_function=self.embedding_model
+        self.embedding_function = OllamaLangchainEmbeddings(
+            model_name="mxbai-embed-large",
+            url="http://localhost:11434/api/embeddings"
         )
+        self.vectorstore = Chroma(client=self.persistent_client, collection_name="documents",
+                                  embedding_function=self.embedding_function)
 
     def add_files_from_project_to_db(self, project_path: str, language: str):
         """Add or update files from the project path to the database."""
