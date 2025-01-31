@@ -33,8 +33,22 @@ class AiHandler:
         self.chroma_db = ChromaDBManager()
         self.question_answer_chain = create_stuff_documents_chain(self.llm, system_prompt())
         self.retriever = self.chroma_db.vectorstore.as_retriever(
-            search_kwargs={'filter': {'project_path': project_path}})
+            search_kwargs={'filter': {'project_path': project_path}, 'k': 20})
         self.history_aware_retriever = create_history_aware_retriever(self.llm,
                                                                       self.retriever,
                                                                       contextualize_q_prompt())
         self.rag_chain = create_retrieval_chain(self.history_aware_retriever, self.question_answer_chain)
+
+    # def retrieve_documents(self, query):
+    #     """Retrieve documents and log queried files"""
+    #     retrieved_docs = self.retriever.invoke(query)
+    #
+    #     if retrieved_docs:
+    #         logging.info("Queried Files:")
+    #         for doc in retrieved_docs:
+    #             file_id = doc.metadata.get('id', 'Unknown File')
+    #             logging.info(f"Retrieved: {file_id}")
+    #     else:
+    #         logging.info("No documents retrieved for query.")
+    #
+    #     return retrieved_docs

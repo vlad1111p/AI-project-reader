@@ -39,6 +39,9 @@ class AiProjectAnalyzer:
 
     def query_model(self, query: str, project_path: str, language: str) -> str:
         """Generate a chat response using ChatOllama with summary.txt as context."""
+
+        # self.ai_handler.retrieve_documents(query)
+
         input_data = {
             "query": query,
             "project_path": project_path,

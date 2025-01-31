@@ -15,6 +15,6 @@ if __name__ == "__main__":
     # analyze(java_user_query, java_project_path, java_language)
     python_project_path = "C:/Users/vlad/PycharmProjects/ai-project-reader"
     python_language = "python"
-    python_user_query = "what is my name"
+    python_user_query = "please improve ChromaDBManager"
     # python_user_query = "Refactor me the ai_analyzer.py"
-    analyze(python_user_query, python_project_path, python_language)
+    analyze(python_user_query, python_project_path, python_language, model_type="chatgpt", model_name="gpt-4o")

@@ -1,4 +1,3 @@
-import logging
 from hashlib import md5
 
 import chromadb
@@ -33,7 +32,7 @@ class ChromaDBManager:
             if existing_docs:
                 stored_content = existing_docs[0].page_content
                 if md5(stored_content.encode()).hexdigest() != md5(content.encode()).hexdigest():
-                    logging.info(f"File '{file_path}' has been modified, updating...")
+                    # logging.info(f"File '{file_path}' has been modified, updating...")
                     existing_ids = [doc.metadata['id'] for doc in existing_docs]
                     if file_path in existing_ids:
                         self.vectorstore.delete(ids=[file_path])
@@ -51,7 +50,7 @@ class ChromaDBManager:
                 "id": file_path
             }]
         )
-        logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
+        # logging.info(f"File '{file_path}' added to ChromaDB with embedding.")
 
     def query_db(self, query_text: str, project_path: str, language: str):
         """Query ChromaDB with text and retrieve similar documents."""
@@ -69,5 +68,5 @@ class ChromaDBManager:
 
             return list(unique_files) if unique_files else None
         else:
-            logging.info(f"Embedding for query '{query_text}' is empty, skipping query.")
+            # logging.info(f"Embedding for query '{query_text}' is empty, skipping query.")
             return None
