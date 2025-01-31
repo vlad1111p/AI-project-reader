@@ -52,10 +52,3 @@ Modify the script to specify the project path, language, and query.
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or new features.
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
-Feel free to customize the README further based on your specific project details and requirements.
