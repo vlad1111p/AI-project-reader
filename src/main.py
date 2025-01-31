@@ -9,7 +9,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     java_project_path = "D:/work/spring projects/demoHazelcast/src/main/java/com/demoHazelcast/demoHazelcast"
-    java_user_query = "Refactor me Premierleague class"
+    java_user_query = "How should i improve PremierLeague class"
     java_language = "java"
 
     analyze(java_user_query, java_project_path, java_language)
