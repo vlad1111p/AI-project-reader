@@ -8,9 +8,9 @@ from src.domain.query_state import QueryState
 
 class AiProjectAnalyzer:
 
-    def __init__(self, project_path: str):
+    def __init__(self, project_path: str, model_name: str, model_type: str):
+        self.ai_handler = AiHandler(project_path=project_path, model_name=model_name, model_type=model_type)
         self.state_graph = self.build_graph()
-        self.ai_handler = AiHandler(project_path=project_path)
 
     def build_graph(self) -> CompiledStateGraph:
         workflow = StateGraph(QueryState)
@@ -19,9 +19,8 @@ class AiProjectAnalyzer:
 
         workflow.set_entry_point("process_query")
         workflow.set_finish_point("process_query")
-        memory = MemorySaver()
 
-        return workflow.compile(checkpointer=memory)
+        return workflow.compile(checkpointer=MemorySaver())
 
     def process_query(self, state: QueryState) -> QueryState:
         """Process the query using chat history from summary.txt and generate a response."""
@@ -40,6 +39,9 @@ class AiProjectAnalyzer:
 
     def query_model(self, query: str, project_path: str, language: str) -> str:
         """Generate a chat response using ChatOllama with summary.txt as context."""
+
+        # self.ai_handler.retrieve_documents(query)
+
         input_data = {
             "query": query,
             "project_path": project_path,
