@@ -10,19 +10,28 @@ CONFIG_FILE = "config.json"
 
 
 def save_config():
-    """Save the OpenAI API key to a config file."""
-    config_data = {"openai_api_key": api_key_entry.get()}
+    """Save the OpenAI API key and last-used model name to a config file."""
+    config_data = {
+        "openai_api_key": api_key_entry.get(),
+        "model_name": model_name_entry.get()
+    }
     with open(CONFIG_FILE, "w") as f:
         json.dump(config_data, f)
 
 
 def load_config():
-    """Load the OpenAI API key from a config file."""
+    """Load the OpenAI API key and last-used model name from a config file."""
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
-            config_data = json.load(f)
-            return config_data.get("openai_api_key", "")
-    return ""
+            return json.load(f)
+    return {}
+
+
+def update_model_entry(*args):
+    """Update the model name entry when a dropdown selection is made."""
+    selected_model = model_name_var.get()
+    model_name_entry.delete(0, tk.END)
+    model_name_entry.insert(0, selected_model)
 
 
 def run_analysis():
@@ -30,7 +39,7 @@ def run_analysis():
     project_path = project_entry.get()
     language = language_var.get()
     model_type = model_type_var.get()
-    model_name = model_name_var.get()
+    model_name = model_name_entry.get()
     openai_key = api_key_entry.get()
 
     if not query or not project_path or not openai_key:
@@ -63,6 +72,10 @@ def select_project():
     project_entry.insert(0, folder)
 
 
+config = load_config()
+saved_api_key = config.get("openai_api_key", "")
+saved_model_name = config.get("model_name", "gpt-4o")
+
 root = tk.Tk()
 root.title("AI Code Analyzer")
 
@@ -86,15 +99,21 @@ model_type_dropdown = tk.OptionMenu(root, model_type_var, "Chatgpt", "Ollama")
 model_type_dropdown.grid(row=3, column=1, padx=5, pady=5)
 
 tk.Label(root, text="Model Name:").grid(row=4, column=0, sticky="w")
-model_name_var = tk.StringVar(value="gpt-4o")
+
+model_name_var = tk.StringVar(value=saved_model_name)
 model_name_dropdown = tk.OptionMenu(root, model_name_var, "gpt-4o", "gpt-4o-mini", "o1", "o3-mini")
 model_name_dropdown.grid(row=4, column=1, padx=5, pady=5)
 
+model_name_entry = tk.Entry(root, width=30)
+model_name_entry.grid(row=4, column=2, padx=5, pady=5)
+model_name_entry.insert(0, saved_model_name)
+
+model_name_var.trace_add("write", update_model_entry)
+
 tk.Label(root, text="OpenAI API Key:").grid(row=5, column=0, sticky="w")
-api_key_entry = tk.Entry(root, width=50, show="*")  # Mask key input
+api_key_entry = tk.Entry(root, width=50, show="*")
 api_key_entry.grid(row=5, column=1, padx=5, pady=5)
 
-saved_api_key = load_config()
 if saved_api_key:
     api_key_entry.insert(0, saved_api_key)
 
