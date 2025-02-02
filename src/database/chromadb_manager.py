@@ -1,7 +1,7 @@
 from hashlib import md5
 
 import chromadb
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 from src.ai.embeddings.OllamaLangchainEmbeddings import OllamaLangchainEmbeddings
 from src.util.file_reader import FileReader

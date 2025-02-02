@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
-from langchain_community.chat_models import ChatOpenAI
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from src.ai.ai_code_analyzer.prompts import system_prompt, contextualize_q_prompt
 from src.database.chromadb_manager import ChromaDBManager

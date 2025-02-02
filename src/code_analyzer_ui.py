@@ -1,9 +1,28 @@
+import json
 import os
 import tkinter as tk
 from threading import Thread
 from tkinter import filedialog, messagebox
 
 from src.service.code_analyzer import analyze
+
+CONFIG_FILE = "config.json"
+
+
+def save_config():
+    """Save the OpenAI API key to a config file."""
+    config_data = {"openai_api_key": api_key_entry.get()}
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config_data, f)
+
+
+def load_config():
+    """Load the OpenAI API key from a config file."""
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as f:
+            config_data = json.load(f)
+            return config_data.get("openai_api_key", "")
+    return ""
 
 
 def run_analysis():
@@ -20,6 +39,8 @@ def run_analysis():
 
     os.environ["OPENAI_API_KEY"] = openai_key
 
+    save_config()
+
     def analyze_and_display():
         try:
             result = analyze(query, project_path, language, model_type, model_name)
@@ -30,7 +51,6 @@ def run_analysis():
             output_text.delete("1.0", tk.END)
             output_text.insert(tk.END, result)
             output_text.config(state=tk.DISABLED)
-
         except Exception as e:
             messagebox.showerror("Error", f"Analysis failed: {str(e)}")
 
@@ -43,7 +63,6 @@ def select_project():
     project_entry.insert(0, folder)
 
 
-# UI Setup
 root = tk.Tk()
 root.title("AI Code Analyzer")
 
@@ -72,8 +91,12 @@ model_name_dropdown = tk.OptionMenu(root, model_name_var, "gpt-4o", "gpt-4o-mini
 model_name_dropdown.grid(row=4, column=1, padx=5, pady=5)
 
 tk.Label(root, text="OpenAI API Key:").grid(row=5, column=0, sticky="w")
-api_key_entry = tk.Entry(root, width=50, show="*")
+api_key_entry = tk.Entry(root, width=50, show="*")  # Mask key input
 api_key_entry.grid(row=5, column=1, padx=5, pady=5)
+
+saved_api_key = load_config()
+if saved_api_key:
+    api_key_entry.insert(0, saved_api_key)
 
 tk.Button(root, text="Run Analysis", command=run_analysis).grid(row=6, column=1, pady=10)
 
