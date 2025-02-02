@@ -15,10 +15,10 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def create_llm(model_name, model_type, temperature):
-    if model_type == "llama":
+    if model_type == "Ollama":
         return ChatOllama(model=model_name,
                           temperature=temperature)
-    elif model_type == "chatgpt":
+    elif model_type == "Chatgpt":
         return ChatOpenAI(model=model_name,
                           temperature=temperature,
                           openai_api_key=OPENAI_API_KEY)

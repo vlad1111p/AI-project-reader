@@ -8,3 +8,5 @@ langgraph-checkpoint-sqlite~=2.0.1
 sentence-transformers
 python-dotenv
 openai
+tkinter
+pyinstaller

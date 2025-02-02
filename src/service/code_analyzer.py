@@ -11,3 +11,4 @@ def analyze(query: str, project_path: str, language: str, model_type: str, model
     response = project_analyzer.query_model(query, project_path, language)
     print("----------------------Response----------------")
     print(f"Response for Document : {response}")
+    return response
